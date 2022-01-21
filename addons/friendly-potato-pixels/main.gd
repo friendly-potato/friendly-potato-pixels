@@ -5,6 +5,8 @@ const INITIAL_CANVAS_SCALE: float = 8.0
 var plugin: Node
 var undo_redo
 
+var toolbar: Node
+
 var logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
 
 onready var viewport: Viewport = $ViewportContainer/Viewport
@@ -21,6 +23,8 @@ var clicks_to_ignore: int = 0
 var primary_color := Color.black
 var secondary_color := Color.white
 
+var brush_size: int = 0
+
 ###############################################################################
 # Builtin functions                                                           #
 ###############################################################################
@@ -28,10 +32,23 @@ var secondary_color := Color.white
 func _ready() -> void:
 	if not Engine.editor_hint:
 		plugin = load("res://addons/friendly-potato-pixels/dummy_plugin.gd").new()
+		# TODO instantiate the toolbar manually
+		var control := Control.new()
+		control.anchor_left = 0.75
+		control.anchor_right = 1.0
+		control.margin_top = 7
+		control.margin_bottom = -7
+		control.margin_left = 7
+		control.margin_right = -7
+		add_child(control)
+		toolbar = load("res://addons/friendly-potato-pixels/toolbar.tscn").instance()
+		control.add_child(toolbar)
+		
 	undo_redo = plugin.get_undo_redo()
 	
-	$Tools/VBoxContainer/ColorPicker.connect("color_changed", self, "_on_color_changed")
-	$Tools/VBoxContainer/ColorPicker.get_child(1).get_child(1).connect("pressed", self, "_on_color_dropper_pressed")
+	while toolbar == null:
+		yield(get_tree(), "idle_frame")
+	toolbar.register_main(self)
 	
 	canvas.global_position = viewport.size / 2
 	canvas.scale *= INITIAL_CANVAS_SCALE
@@ -48,6 +65,11 @@ func _process(delta: float) -> void:
 		pos.x += image.get_width() / 2
 		pos.y += image.get_height() / 2
 		image.set_pixelv(pos, primary_color)
+		image.set_pixel(pos.x, pos.y, primary_color)
+		for i in brush_size:
+			image.set_pixel(pos.x + i + 1, pos.y + i + 1, primary_color)
+			image.set_pixel(pos.x + i, pos.y + i + 1, primary_color)
+			image.set_pixel(pos.x + i + 1, pos.y + i, primary_color)
 		var tex := ImageTexture.new()
 		tex.create_from_image(image, 0)
 		sprite.texture = tex
