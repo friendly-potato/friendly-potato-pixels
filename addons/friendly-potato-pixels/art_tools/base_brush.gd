@@ -1,15 +1,15 @@
-extends Control
+extends Reference
 
-var plugin: Node
+const BLIT: GDScript = preload("res://addons/friendly-potato-pixels/art_tools/blit.gd")
 
-onready var pencil: Button = $PanelContainer/VBoxContainer/HBoxContainer/Left/Pencil
-onready var smart_brush: Button = $PanelContainer/VBoxContainer/HBoxContainer/Right/SmartBrush
-
-onready var color_picker: ColorPicker = $PanelContainer/VBoxContainer/ColorPicker
+var size: int = 1
 
 ###############################################################################
 # Builtin functions                                                           #
 ###############################################################################
+
+func _ready() -> void:
+	pass
 
 ###############################################################################
 # Connections                                                                 #
@@ -23,9 +23,7 @@ onready var color_picker: ColorPicker = $PanelContainer/VBoxContainer/ColorPicke
 # Public functions                                                            #
 ###############################################################################
 
-func register_main(node: Node) -> void:
-	pencil.connect("pressed", node, "_on_pencil_pressed")
-	smart_brush.connect("pressed", node, "_on_smart_brush_pressed")
+func paint(_pos: Vector2) -> Reference:
+	var r := BLIT.new()
 	
-	color_picker.connect("color_changed", node, "_on_color_changed")
-	color_picker.get_child(1).get_child(1).connect("pressed", node, "_on_color_dropper_pressed")
+	return r

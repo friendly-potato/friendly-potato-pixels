@@ -55,6 +55,11 @@ margin_bottom = 20.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
+[node name="SmartBrush" type="Button" parent="PanelContainer/VBoxContainer/HBoxContainer/Right"]
+margin_right = 784.0
+margin_bottom = 20.0
+text = "Smart Brush"
+
 [node name="ColorPicker" type="ColorPicker" parent="PanelContainer/VBoxContainer"]
 margin_top = 24.0
 margin_right = 1572.0

@@ -1,15 +1,11 @@
-extends Control
-
-var plugin: Node
-
-onready var pencil: Button = $PanelContainer/VBoxContainer/HBoxContainer/Left/Pencil
-onready var smart_brush: Button = $PanelContainer/VBoxContainer/HBoxContainer/Right/SmartBrush
-
-onready var color_picker: ColorPicker = $PanelContainer/VBoxContainer/ColorPicker
+extends "res://addons/friendly-potato-pixels/art_tools/base_brush.gd"
 
 ###############################################################################
 # Builtin functions                                                           #
 ###############################################################################
+
+func _ready() -> void:
+	pass
 
 ###############################################################################
 # Connections                                                                 #
@@ -23,9 +19,17 @@ onready var color_picker: ColorPicker = $PanelContainer/VBoxContainer/ColorPicke
 # Public functions                                                            #
 ###############################################################################
 
-func register_main(node: Node) -> void:
-	pencil.connect("pressed", node, "_on_pencil_pressed")
-	smart_brush.connect("pressed", node, "_on_smart_brush_pressed")
+func paint(pos: Vector2) -> Reference:
+	var r: Reference = BLIT.new()
 	
-	color_picker.connect("color_changed", node, "_on_color_changed")
-	color_picker.get_child(1).get_child(1).connect("pressed", node, "_on_color_dropper_pressed")
+	if size == 0:
+		r.data.append(pos)
+	elif size % 2 == 0: # Offset to bottom right hand corner
+		var top_left := Vector2(size / 2, size / 2)
+		var top_right := Vector2(top_left.x + size - 1, top_left.y)
+		var bot_left := Vector2(top_left.x, top_left.y + size - 1)
+		var bot_right := Vector2(top_right.x, bot_left.y)
+	else: # No offset
+		pass
+	
+	return r

@@ -41,6 +41,7 @@ render_target_update_mode = 3
 
 [node name="Sprite" type="Sprite" parent="ViewportContainer/Viewport/Canvas"]
 texture = ExtResource( 2 )
+centered = false
 
 [node name="Cells" type="TileMap" parent="ViewportContainer/Viewport/Canvas"]
 cell_size = Vector2( 1, 1 )

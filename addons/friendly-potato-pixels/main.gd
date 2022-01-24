@@ -1,6 +1,8 @@
 extends Control
 
 const INITIAL_CANVAS_SCALE: float = 8.0
+# TODO move this to an equation?
+const HALF_INITIAL_CANVAS_SCALE: float = INITIAL_CANVAS_SCALE / 2.0
 
 var plugin: Node
 var undo_redo
@@ -16,13 +18,16 @@ onready var cells: TileMap = $ViewportContainer/Viewport/Canvas/Cells
 
 var image: Image
 
+# Control data
 var move_canvas := false
 var is_drawing := false
 var clicks_to_ignore: int = 0
 
+# Art data
 var primary_color := Color.black
 var secondary_color := Color.white
 
+var brush: Reference = load("res://addons/friendly-potato-pixels/art_tools/pencil.gd").new()
 var brush_size: int = 0
 
 ###############################################################################
@@ -51,6 +56,8 @@ func _ready() -> void:
 	toolbar.register_main(self)
 	
 	canvas.global_position = viewport.size / 2
+	canvas.global_position.x -= sprite.texture.get_width() * HALF_INITIAL_CANVAS_SCALE
+	canvas.global_position.y -= sprite.texture.get_height() * HALF_INITIAL_CANVAS_SCALE
 	canvas.scale *= INITIAL_CANVAS_SCALE
 	
 	image = sprite.texture.get_data().duplicate()
@@ -61,10 +68,13 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if is_drawing:
 		var pos: Vector2 = cells.world_to_map(cells.to_local(viewport.get_mouse_position()))
-		# TODO this will break on images that aren't even height/width
-		pos.x += image.get_width() / 2
-		pos.y += image.get_height() / 2
-		image.set_pixelv(pos, primary_color)
+		if ((pos.x < 0 or pos.x >= image.get_width())
+				or (pos.y < 0 or pos.y >= image.get_height())):
+			return
+		
+		var blit: Reference = brush.paint(pos)
+		# blit
+		
 		image.set_pixel(pos.x, pos.y, primary_color)
 		for i in brush_size:
 			image.set_pixel(pos.x + i + 1, pos.y + i + 1, primary_color)
@@ -89,8 +99,12 @@ func _input(event: InputEvent) -> void:
 				move_canvas = event.pressed
 			BUTTON_WHEEL_UP:
 				canvas.scale *= 1.1
+				canvas.global_position.x -= sprite.texture.get_width() * 1.1 / 2
+				canvas.global_position.y -= sprite.texture.get_height() * 1.1 / 2
 			BUTTON_WHEEL_DOWN:
 				canvas.scale *= 0.9
+				canvas.global_position.x += sprite.texture.get_width() * 0.9 / 2
+				canvas.global_position.y += sprite.texture.get_height() * 0.9 / 2
 	elif event is InputEventMouseMotion:
 		if move_canvas:
 			canvas.global_position += event.relative
@@ -104,6 +118,12 @@ func _exit_tree() -> void:
 ###############################################################################
 # Connections                                                                 #
 ###############################################################################
+
+func _on_pencil_pressed() -> void:
+	pass
+
+func _on_smart_brush_pressed() -> void:
+	pass
 
 func _on_color_changed(color: Color) -> void:
 	primary_color = color
