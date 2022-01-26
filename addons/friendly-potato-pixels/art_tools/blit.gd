@@ -1,3 +1,3 @@
-extends Reference
+extends Object
 
-var data := PoolVector2Array()
+var data := []

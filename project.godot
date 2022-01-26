@@ -18,8 +18,6 @@ config/icon="res://icon.png"
 
 window/size/width=1600
 window/size/height=900
-window/stretch/mode="viewport"
-window/stretch/aspect="expand"
 
 [physics]
 

@@ -19,17 +19,21 @@ func _ready() -> void:
 # Public functions                                                            #
 ###############################################################################
 
-func paint(pos: Vector2) -> Reference:
-	var r: Reference = BLIT.new()
+func paint(pos: Vector2, image: Image) -> Object:
+	var r: Object = BLIT.new()
 	
-	if size == 0:
-		r.data.append(pos)
+	if size == 1:
+		if _is_valid_pos(pos.x, pos.y, image.get_width() - 1, image.get_height() - 1):
+			r.data.append(pos)
 	elif size % 2 == 0: # Offset to bottom right hand corner
-		var top_left := Vector2(size / 2, size / 2)
-		var top_right := Vector2(top_left.x + size - 1, top_left.y)
-		var bot_left := Vector2(top_left.x, top_left.y + size - 1)
-		var bot_right := Vector2(top_right.x, bot_left.y)
+		var half_size := size / 2
+		
+		var top_left := -Vector2(half_size, half_size)
+		_fill_square(top_left + pos, r.data, image.get_width() - 1, image.get_height() - 1)
 	else: # No offset
-		pass
+		var half_floored_size := floor(size / 2)
+		
+		var top_left := -Vector2(half_floored_size, half_floored_size)
+		_fill_square(top_left + pos, r.data, image.get_width() - 1, image.get_height() - 1)
 	
 	return r

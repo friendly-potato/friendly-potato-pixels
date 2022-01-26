@@ -19,8 +19,8 @@ func _ready() -> void:
 # Public functions                                                            #
 ###############################################################################
 
-func paint(pos: Vector2) -> Reference:
-	var r: Reference = BLIT.new()
+func paint(pos: Vector2, _image: Image) -> Object:
+	var r: Object = BLIT.new()
 	
 	
 	

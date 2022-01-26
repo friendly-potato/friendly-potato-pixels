@@ -60,7 +60,44 @@ margin_right = 784.0
 margin_bottom = 20.0
 text = "Smart Brush"
 
-[node name="ColorPicker" type="ColorPicker" parent="PanelContainer/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="PanelContainer/VBoxContainer"]
 margin_top = 24.0
 margin_right = 1572.0
-margin_bottom = 486.0
+margin_bottom = 28.0
+
+[node name="SizeContainer" type="VBoxContainer" parent="PanelContainer/VBoxContainer"]
+margin_top = 32.0
+margin_right = 1572.0
+margin_bottom = 76.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/VBoxContainer/SizeContainer"]
+margin_right = 1572.0
+margin_bottom = 24.0
+
+[node name="Label" type="Label" parent="PanelContainer/VBoxContainer/SizeContainer/HBoxContainer"]
+margin_top = 5.0
+margin_right = 784.0
+margin_bottom = 19.0
+size_flags_horizontal = 3
+text = "Tool size"
+
+[node name="LineEdit" type="LineEdit" parent="PanelContainer/VBoxContainer/SizeContainer/HBoxContainer"]
+margin_left = 788.0
+margin_right = 1572.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+
+[node name="HSlider" type="HSlider" parent="PanelContainer/VBoxContainer/SizeContainer"]
+margin_top = 28.0
+margin_right = 1572.0
+margin_bottom = 44.0
+
+[node name="HSeparator2" type="HSeparator" parent="PanelContainer/VBoxContainer"]
+margin_top = 80.0
+margin_right = 1572.0
+margin_bottom = 84.0
+
+[node name="ColorPicker" type="ColorPicker" parent="PanelContainer/VBoxContainer"]
+margin_top = 88.0
+margin_right = 1572.0
+margin_bottom = 550.0

@@ -3,6 +3,8 @@ extends Control
 const INITIAL_CANVAS_SCALE: float = 10.0
 const ZOOM_INCREMENT := Vector2(0.4, 0.4)
 
+const MAX_ALPHA: int = 255
+
 var plugin: Node
 var undo_redo
 
@@ -25,17 +27,26 @@ var is_drawing := false
 var clicks_to_ignore: int = 0
 
 # Art data
-var primary_color := Color.black
+var last_pixel_pos := Vector2(-1, -1)
+var primary_color
 var secondary_color := Color.white
 
 var brush: Reference = load("res://addons/friendly-potato-pixels/art_tools/pencil.gd").new()
-var brush_size: int = 0
 
 ###############################################################################
 # Builtin functions                                                           #
 ###############################################################################
 
 func _ready() -> void:
+	"""
+	Order of initialization is very important.
+	
+	Must follow:
+		1. Plugin
+		2. Wait for toolbar to instance
+		3. Image
+		4. Toolbar
+	"""
 	if not Engine.editor_hint:
 		var setup_util: Object = load("res://addons/friendly-potato-pixels/standalone/setup_util.gd").new()
 		
@@ -48,19 +59,15 @@ func _ready() -> void:
 		control.add_child(toolbar)
 		
 		setup_util.free()
+		
+	get_tree().connect("screen_resized", self, "_on_screen_resized")
+	_on_screen_resized()
 	
 	undo_redo = plugin.get_undo_redo()
 	
 	# When starting as a plugin, prevent race condition on startup
 	while toolbar == null:
 		yield(get_tree(), "idle_frame")
-	toolbar.register_main(self)
-	
-	# Zooming is handled by the viewport container, positioning is handled by the canvas
-	viewport_container.rect_pivot_offset = viewport.size / 2
-	viewport_container.rect_scale = (INITIAL_CANVAS_SCALE * ZOOM_INCREMENT)
-	
-	canvas.global_position = viewport.size / 2
 	
 	# Shift canvas children over since the sprite is intentionally not centered
 	sprite.position.x -= sprite.texture.get_width() / 2
@@ -70,26 +77,9 @@ func _ready() -> void:
 	image = sprite.texture.get_data().duplicate()
 	image.lock()
 	
+	toolbar.register_main(self)
+	
 	logger.info("Friendly Potato Pixels started")
-
-func _process(delta: float) -> void:
-	if is_drawing:
-		var pos: Vector2 = cells.world_to_map(cells.to_local(viewport.get_mouse_position() / viewport_container.rect_scale))
-		if ((pos.x < 0 or pos.x >= image.get_width())
-				or (pos.y < 0 or pos.y >= image.get_height())):
-			return
-		
-		var blit: Reference = brush.paint(pos)
-		# blit
-		
-		image.set_pixel(pos.x, pos.y, primary_color)
-		for i in brush_size:
-			image.set_pixel(pos.x + i + 1, pos.y + i + 1, primary_color)
-			image.set_pixel(pos.x + i, pos.y + i + 1, primary_color)
-			image.set_pixel(pos.x + i + 1, pos.y + i, primary_color)
-		var tex := ImageTexture.new()
-		tex.create_from_image(image, 0)
-		sprite.texture = tex
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -97,9 +87,9 @@ func _input(event: InputEvent) -> void:
 			BUTTON_LEFT:
 				if clicks_to_ignore > 0:
 					clicks_to_ignore -= 1
-				# TODO tool switching done here
 				else:
 					is_drawing = event.pressed
+					_blit()
 			BUTTON_RIGHT:
 				pass
 			BUTTON_MIDDLE:
@@ -111,6 +101,8 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion:
 		if move_canvas:
 			canvas.global_position += event.relative / viewport_container.rect_scale
+		if is_drawing:
+			_blit()
 
 func _exit_tree() -> void:
 	if not Engine.editor_hint:
@@ -122,11 +114,20 @@ func _exit_tree() -> void:
 # Connections                                                                 #
 ###############################################################################
 
+func _on_screen_resized() -> void:
+	viewport_container.rect_pivot_offset = viewport.size / 2
+	viewport_container.rect_scale = (INITIAL_CANVAS_SCALE * ZOOM_INCREMENT)
+	
+	canvas.global_position = viewport.size / 2
+
 func _on_pencil_pressed() -> void:
 	pass
 
 func _on_smart_brush_pressed() -> void:
 	pass
+
+func _on_brush_size_changed(value: int) -> void:
+	brush.size = value
 
 func _on_color_changed(color: Color) -> void:
 	primary_color = color
@@ -138,6 +139,27 @@ func _on_color_dropper_pressed() -> void:
 ###############################################################################
 # Private functions                                                           #
 ###############################################################################
+
+func _blit() -> void:
+	var pos: Vector2 = cells.world_to_map(cells.to_local(viewport.get_mouse_position() / viewport_container.rect_scale))
+	if pos == last_pixel_pos:
+		return
+	last_pixel_pos = pos
+		
+	var blit: Object = brush.paint(pos, image)
+	
+	# TODO additional blit operations
+	
+	for vec in blit.data:
+		var pix_color := image.get_pixelv(vec)
+		
+		image.set_pixelv(vec, pix_color.blend(primary_color))
+	
+	blit.free()
+	
+	var tex := ImageTexture.new()
+	tex.create_from_image(image, 0)
+	sprite.texture = tex
 
 ###############################################################################
 # Public functions                                                            #
