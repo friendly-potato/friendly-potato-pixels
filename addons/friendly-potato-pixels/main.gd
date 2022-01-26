@@ -1,6 +1,7 @@
 extends Control
 
-const INITIAL_CANVAS_SCALE: float = 8.0
+const INITIAL_CANVAS_SCALE: float = 10.0
+const ZOOM_INCREMENT := Vector2(0.4, 0.4)
 
 var plugin: Node
 var undo_redo
@@ -9,6 +10,7 @@ var toolbar: Node
 
 var logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
 
+onready var viewport_container: ViewportContainer = $ViewportContainer
 onready var viewport: Viewport = $ViewportContainer/Viewport
 onready var canvas: Node2D = $ViewportContainer/Viewport/Canvas
 onready var sprite: Sprite = $ViewportContainer/Viewport/Canvas/Sprite
@@ -46,16 +48,19 @@ func _ready() -> void:
 		control.add_child(toolbar)
 		
 		setup_util.free()
-		
+	
 	undo_redo = plugin.get_undo_redo()
 	
+	# When starting as a plugin, prevent race condition on startup
 	while toolbar == null:
 		yield(get_tree(), "idle_frame")
 	toolbar.register_main(self)
 	
-	# Center the canvas and scale it
+	# Zooming is handled by the viewport container, positioning is handled by the canvas
+	viewport_container.rect_pivot_offset = viewport.size / 2
+	viewport_container.rect_scale = (INITIAL_CANVAS_SCALE * ZOOM_INCREMENT)
+	
 	canvas.global_position = viewport.size / 2
-	canvas.scale *= INITIAL_CANVAS_SCALE
 	
 	# Shift canvas children over since the sprite is intentionally not centered
 	sprite.position.x -= sprite.texture.get_width() / 2
@@ -69,7 +74,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if is_drawing:
-		var pos: Vector2 = cells.world_to_map(cells.to_local(viewport.get_mouse_position()))
+		var pos: Vector2 = cells.world_to_map(cells.to_local(viewport.get_mouse_position() / viewport_container.rect_scale))
 		if ((pos.x < 0 or pos.x >= image.get_width())
 				or (pos.y < 0 or pos.y >= image.get_height())):
 			return
@@ -100,12 +105,12 @@ func _input(event: InputEvent) -> void:
 			BUTTON_MIDDLE:
 				move_canvas = event.pressed
 			BUTTON_WHEEL_UP:
-				canvas.scale *= 1.1
+				viewport_container.rect_scale += ZOOM_INCREMENT
 			BUTTON_WHEEL_DOWN:
-				canvas.scale *= 0.9
+				viewport_container.rect_scale -= ZOOM_INCREMENT
 	elif event is InputEventMouseMotion:
 		if move_canvas:
-			canvas.global_position += event.relative
+			canvas.global_position += event.relative / viewport_container.rect_scale
 
 func _exit_tree() -> void:
 	if not Engine.editor_hint:
