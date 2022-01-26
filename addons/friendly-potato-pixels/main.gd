@@ -1,8 +1,6 @@
 extends Control
 
 const INITIAL_CANVAS_SCALE: float = 8.0
-# TODO move this to an equation?
-const HALF_INITIAL_CANVAS_SCALE: float = INITIAL_CANVAS_SCALE / 2.0
 
 var plugin: Node
 var undo_redo
@@ -16,6 +14,7 @@ onready var canvas: Node2D = $ViewportContainer/Viewport/Canvas
 onready var sprite: Sprite = $ViewportContainer/Viewport/Canvas/Sprite
 onready var cells: TileMap = $ViewportContainer/Viewport/Canvas/Cells
 
+# The thing actually being drawn to
 var image: Image
 
 # Control data
@@ -36,18 +35,17 @@ var brush_size: int = 0
 
 func _ready() -> void:
 	if not Engine.editor_hint:
-		plugin = load("res://addons/friendly-potato-pixels/dummy_plugin.gd").new()
-		# TODO instantiate the toolbar manually
-		var control := Control.new()
-		control.anchor_left = 0.75
-		control.anchor_right = 1.0
-		control.margin_top = 7
-		control.margin_bottom = -7
-		control.margin_left = 7
-		control.margin_right = -7
+		var setup_util: Object = load("res://addons/friendly-potato-pixels/standalone/setup_util.gd").new()
+		
+		plugin = setup_util.create_dummy_plugin()
+		
+		var control: Control = setup_util.setup_toolbar_control()
 		add_child(control)
-		toolbar = load("res://addons/friendly-potato-pixels/toolbar.tscn").instance()
+		
+		toolbar = setup_util.create_toolbar()
 		control.add_child(toolbar)
+		
+		setup_util.free()
 		
 	undo_redo = plugin.get_undo_redo()
 	
@@ -55,10 +53,14 @@ func _ready() -> void:
 		yield(get_tree(), "idle_frame")
 	toolbar.register_main(self)
 	
+	# Center the canvas and scale it
 	canvas.global_position = viewport.size / 2
-	canvas.global_position.x -= sprite.texture.get_width() * HALF_INITIAL_CANVAS_SCALE
-	canvas.global_position.y -= sprite.texture.get_height() * HALF_INITIAL_CANVAS_SCALE
 	canvas.scale *= INITIAL_CANVAS_SCALE
+	
+	# Shift canvas children over since the sprite is intentionally not centered
+	sprite.position.x -= sprite.texture.get_width() / 2
+	sprite.position.y -= sprite.texture.get_height() / 2
+	cells.position = sprite.position
 	
 	image = sprite.texture.get_data().duplicate()
 	image.lock()
@@ -99,12 +101,8 @@ func _input(event: InputEvent) -> void:
 				move_canvas = event.pressed
 			BUTTON_WHEEL_UP:
 				canvas.scale *= 1.1
-				canvas.global_position.x -= sprite.texture.get_width() * 1.1 / 2
-				canvas.global_position.y -= sprite.texture.get_height() * 1.1 / 2
 			BUTTON_WHEEL_DOWN:
 				canvas.scale *= 0.9
-				canvas.global_position.x += sprite.texture.get_width() * 0.9 / 2
-				canvas.global_position.y += sprite.texture.get_height() * 0.9 / 2
 	elif event is InputEventMouseMotion:
 		if move_canvas:
 			canvas.global_position += event.relative

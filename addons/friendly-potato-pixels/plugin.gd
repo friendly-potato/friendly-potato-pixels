@@ -3,29 +3,38 @@ extends EditorPlugin
 
 var main: Control
 var toolbar: Control
+var menu_bar: Control
 
 func _enter_tree():
+	menu_bar = load("res://addons/friendly-potato-pixels/menu_bar.tscn").instance()
+	_inject_tool(menu_bar)
+	menu_bar.plugin = self
+	
 	toolbar = load("res://addons/friendly-potato-pixels/toolbar.tscn").instance()
 	_inject_tool(toolbar)
 	toolbar.plugin = self
 	
-	add_control_to_dock(EditorPlugin.DOCK_SLOT_RIGHT_UL, toolbar)
-	
 	main = load("res://addons/friendly-potato-pixels/main.tscn").instance()
 	_inject_tool(main)
 	main.plugin = self
-	
-	get_editor_interface().get_editor_viewport().add_child(main)
-	
 	main.toolbar = toolbar
+	
+	add_control_to_bottom_panel(menu_bar, "Pixels")
+	add_control_to_dock(EditorPlugin.DOCK_SLOT_RIGHT_UL, toolbar)
+	get_editor_interface().get_editor_viewport().add_child(main)
 	
 	make_visible(false)
 
 func _exit_tree():
 	if main != null:
+		get_editor_interface().get_editor_viewport().remove_child(main)
 		main.queue_free()
 	if toolbar != null:
+		remove_control_from_docks(toolbar)
 		toolbar.queue_free()
+	if menu_bar != null:
+		remove_control_from_bottom_panel(menu_bar)
+		menu_bar.queue_free()
 
 func has_main_screen():
 	return true
