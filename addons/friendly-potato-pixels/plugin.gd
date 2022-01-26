@@ -17,7 +17,9 @@ func _enter_tree():
 	main = load("res://addons/friendly-potato-pixels/main.tscn").instance()
 	_inject_tool(main)
 	main.plugin = self
+	
 	main.toolbar = toolbar
+	main.menu_bar = menu_bar
 	
 	add_control_to_bottom_panel(menu_bar, "Pixels")
 	add_control_to_dock(EditorPlugin.DOCK_SLOT_RIGHT_UL, toolbar)

@@ -1,5 +1,7 @@
 extends Control
 
+signal message_sent(text)
+
 const INITIAL_CANVAS_SCALE: float = 10.0
 const ZOOM_INCREMENT := Vector2(0.4, 0.4)
 
@@ -9,6 +11,7 @@ var plugin: Node
 var undo_redo
 
 var toolbar: Node
+var menu_bar: Node
 
 var logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
 
@@ -46,27 +49,34 @@ func _ready() -> void:
 		2. Wait for toolbar to instance
 		3. Image
 		4. Toolbar
+		5. Menu bar
 	"""
 	if not Engine.editor_hint:
 		var setup_util: Object = load("res://addons/friendly-potato-pixels/standalone/setup_util.gd").new()
 		
 		plugin = setup_util.create_dummy_plugin()
 		
-		var control: Control = setup_util.setup_toolbar_control()
-		add_child(control)
+		var tb_control: Control = setup_util.setup_toolbar_control()
+		add_child(tb_control)
 		
 		toolbar = setup_util.create_toolbar()
-		control.add_child(toolbar)
+		tb_control.add_child(toolbar)
+		
+		var mb_control: Control = setup_util.setup_menu_bar_control()
+		add_child(mb_control)
+		
+		menu_bar = setup_util.create_menu_bar()
+		mb_control.add_child(menu_bar)
 		
 		setup_util.free()
-		
+	
 	get_tree().connect("screen_resized", self, "_on_screen_resized")
 	_on_screen_resized()
 	
 	undo_redo = plugin.get_undo_redo()
 	
 	# When starting as a plugin, prevent race condition on startup
-	while toolbar == null:
+	while toolbar == null and menu_bar == null:
 		yield(get_tree(), "idle_frame")
 	
 	# Shift canvas children over since the sprite is intentionally not centered
@@ -78,6 +88,7 @@ func _ready() -> void:
 	image.lock()
 	
 	toolbar.register_main(self)
+	menu_bar.register_main(self)
 	
 	logger.info("Friendly Potato Pixels started")
 

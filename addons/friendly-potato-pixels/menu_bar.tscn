@@ -28,13 +28,42 @@ __meta__ = {
 margin_right = 100.0
 margin_bottom = 872.0
 rect_min_size = Vector2( 100, 0 )
+allow_reselect = true
+hide_root = true
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer"]
+[node name="Menu" type="VBoxContainer" parent="HSplitContainer"]
 margin_left = 112.0
 margin_right = 1572.0
 margin_bottom = 872.0
 
-[node name="Label" type="Label" parent="HSplitContainer/VBoxContainer"]
+[node name="Messaging" type="Label" parent="HSplitContainer/Menu"]
 margin_right = 1460.0
 margin_bottom = 14.0
-text = "test"
+
+[node name="SaveLoadButtons" type="HBoxContainer" parent="HSplitContainer/Menu"]
+margin_top = 18.0
+margin_right = 1460.0
+margin_bottom = 38.0
+
+[node name="Save" type="Button" parent="HSplitContainer/Menu/SaveLoadButtons"]
+margin_right = 484.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "Save"
+
+[node name="SaveAs" type="Button" parent="HSplitContainer/Menu/SaveLoadButtons"]
+margin_left = 488.0
+margin_right = 972.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "Save As"
+
+[node name="Load" type="Button" parent="HSplitContainer/Menu/SaveLoadButtons"]
+margin_left = 976.0
+margin_right = 1460.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "Load"

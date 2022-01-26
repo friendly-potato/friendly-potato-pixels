@@ -38,6 +38,8 @@ render_target_update_mode = 3
 
 [node name="Canvas" type="Node2D" parent="ViewportContainer/Viewport"]
 
+[node name="Layers" type="Node2D" parent="ViewportContainer/Viewport/Canvas"]
+
 [node name="Sprite" type="Sprite" parent="ViewportContainer/Viewport/Canvas"]
 texture = ExtResource( 2 )
 centered = false
