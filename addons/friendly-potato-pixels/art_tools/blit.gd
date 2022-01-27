@@ -1,3 +1,4 @@
 extends Object
 
-var data := []
+var position_data := []
+var color_data := []

@@ -5,6 +5,8 @@ var main: Control
 var toolbar: Control
 var menu_bar: Control
 
+var file_system: Tree
+
 func _enter_tree():
 	menu_bar = load("res://addons/friendly-potato-pixels/menu_bar.tscn").instance()
 	_inject_tool(menu_bar)
@@ -26,6 +28,13 @@ func _enter_tree():
 	get_editor_interface().get_editor_viewport().add_child(main)
 	
 	make_visible(false)
+	
+	for c0 in get_editor_interface().get_file_system_dock().get_children():
+		if c0 is VSplitContainer:
+			for c1 in c0.get_children():
+				if c1 is Tree:
+					file_system = c1
+					file_system.connect("multi_selected", self, "_on_file_system_multi_selected")
 
 func _exit_tree():
 	if main != null:
@@ -37,6 +46,19 @@ func _exit_tree():
 	if menu_bar != null:
 		remove_control_from_bottom_panel(menu_bar)
 		menu_bar.queue_free()
+	if file_system != null:
+		file_system.disconnect("multi_selected", self, "_on_file_system_multi_selected")
+
+func _input(event):
+	main.save_util.handle_save_input_event(event)
+
+func _on_file_system_multi_selected(item: TreeItem, column: int, selected: bool) -> void:
+	if not selected:
+		return
+	
+	main.save_util.handle_open_item("%s/%s" % [
+		ProjectSettings.globalize_path(get_editor_interface().get_selected_path()),
+		item.get_text(column)])
 
 func has_main_screen():
 	return true

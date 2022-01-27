@@ -1,7 +1,12 @@
 extends Node
 
+var main: Node
+
 func _exit_tree():
 	pass
+
+func _input(event: InputEvent) -> void:
+	main.save_util.handle_save_input_event(event)
 
 class Dummy extends Object:
 	func cleanup() -> void:

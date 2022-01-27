@@ -14,6 +14,7 @@ var toolbar: Node
 var menu_bar: Node
 
 var logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
+var save_util = load("res://addons/friendly-potato-pixels/save_util.gd").new()
 
 onready var viewport_container: ViewportContainer = $ViewportContainer
 onready var viewport: Viewport = $ViewportContainer/Viewport
@@ -55,6 +56,9 @@ func _ready() -> void:
 		var setup_util: Object = load("res://addons/friendly-potato-pixels/standalone/setup_util.gd").new()
 		
 		plugin = setup_util.create_dummy_plugin()
+		add_child(plugin)
+		
+		plugin.main = self
 		
 		var tb_control: Control = setup_util.setup_toolbar_control()
 		add_child(tb_control)
@@ -89,6 +93,7 @@ func _ready() -> void:
 	
 	toolbar.register_main(self)
 	menu_bar.register_main(self)
+	save_util.register_main(self)
 	
 	logger.info("Friendly Potato Pixels started")
 
@@ -147,6 +152,17 @@ func _on_color_dropper_pressed() -> void:
 	clicks_to_ignore += 1
 	is_drawing = false
 
+func _on_image_loaded(i: Image) -> void:
+	image.unlock()
+	
+#	save_util
+	
+	image = i
+	image.lock()
+	var tex := ImageTexture.new()
+	tex.create_from_image(image, 0)
+	sprite.texture = tex
+
 ###############################################################################
 # Private functions                                                           #
 ###############################################################################
@@ -161,7 +177,7 @@ func _blit() -> void:
 	
 	# TODO additional blit operations
 	
-	for vec in blit.data:
+	for vec in blit.position_data:
 		var pix_color := image.get_pixelv(vec)
 		
 		image.set_pixelv(vec, pix_color.blend(primary_color))
