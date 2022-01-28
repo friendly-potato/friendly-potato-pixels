@@ -1,11 +1,15 @@
 tool
 extends EditorPlugin
 
+const PLUGIN_NAME := "Pixels"
+const TOOLBAR_NAME := "Toolbar"
+
 var main: Control
 var toolbar: Control
 var menu_bar: Control
 
 var file_system: Tree
+var toolbar_parent: TabContainer
 
 func _enter_tree():
 	menu_bar = load("res://addons/friendly-potato-pixels/menu_bar.tscn").instance()
@@ -23,7 +27,7 @@ func _enter_tree():
 	main.toolbar = toolbar
 	main.menu_bar = menu_bar
 	
-	add_control_to_bottom_panel(menu_bar, "Pixels")
+	add_control_to_bottom_panel(menu_bar, PLUGIN_NAME)
 	add_control_to_dock(EditorPlugin.DOCK_SLOT_RIGHT_UL, toolbar)
 	get_editor_interface().get_editor_viewport().add_child(main)
 	
@@ -35,6 +39,8 @@ func _enter_tree():
 				if c1 is Tree:
 					file_system = c1
 					file_system.connect("multi_selected", self, "_on_file_system_multi_selected")
+	
+	toolbar_parent = toolbar.get_parent()
 
 func _exit_tree():
 	if main != null:
@@ -51,6 +57,14 @@ func _exit_tree():
 
 func save_external_data():
 	main.save_util.handle_save_image()
+
+func enable_plugin():
+	get_editor_interface().set_main_screen_editor(PLUGIN_NAME)
+	make_bottom_panel_item_visible(menu_bar)
+	for i in toolbar_parent.get_tab_count():
+		if toolbar_parent.get_tab_title(i) == TOOLBAR_NAME:
+			toolbar_parent.current_tab = i
+			break
 
 func _on_file_system_multi_selected(item: TreeItem, column: int, selected: bool) -> void:
 	if not selected:
@@ -73,7 +87,7 @@ func make_visible(visible):
 		main.set_process_unhandled_key_input(visible)
 
 func get_plugin_name():
-	return "Pixels"
+	return PLUGIN_NAME
 
 func get_plugin_icon():
 	return get_editor_interface().get_base_control().get_icon("CanvasLayer", "EditorIcons")

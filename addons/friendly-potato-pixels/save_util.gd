@@ -66,6 +66,10 @@ func handle_open_item(text: String) -> void:
 
 func handle_save_image(current: bool = true) -> void:
 	var path: String = current_file_path if current else last_file_path
+	
+	if path.empty():
+		return
+	
 	main.logger.info("Saving file at path %s" % path)
 	
 	main.image.unlock()
