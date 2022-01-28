@@ -21,6 +21,8 @@ func create_dummy_plugin() -> Node:
 
 func setup_toolbar_control() -> Control:
 	var control := Control.new()
+	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
 	control.anchor_left = 0.75
 	control.anchor_right = 1.0
 	control.anchor_top = 0.0
@@ -37,6 +39,7 @@ func create_toolbar() -> Control:
 
 func setup_menu_bar_control() -> Control:
 	var control := Control.new()
+	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	
 	control.anchor_left = 0.0
 	control.anchor_right = 1.0

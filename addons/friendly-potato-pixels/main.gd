@@ -97,7 +97,7 @@ func _ready() -> void:
 	
 	logger.info("Friendly Potato Pixels started")
 
-func _input(event: InputEvent) -> void:
+func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		match event.button_index:
 			BUTTON_LEFT:

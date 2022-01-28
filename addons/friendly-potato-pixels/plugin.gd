@@ -49,8 +49,8 @@ func _exit_tree():
 	if file_system != null:
 		file_system.disconnect("multi_selected", self, "_on_file_system_multi_selected")
 
-func _input(event):
-	main.save_util.handle_save_input_event(event)
+func save_external_data():
+	main.save_util.handle_save_image()
 
 func _on_file_system_multi_selected(item: TreeItem, column: int, selected: bool) -> void:
 	if not selected:
