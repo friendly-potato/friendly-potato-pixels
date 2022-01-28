@@ -13,15 +13,15 @@ var toolbar_parent: TabContainer
 
 func _enter_tree():
 	menu_bar = load("res://addons/friendly-potato-pixels/menu_bar.tscn").instance()
-	_inject_tool(menu_bar)
+	inject_tool(menu_bar)
 	menu_bar.plugin = self
 	
 	toolbar = load("res://addons/friendly-potato-pixels/toolbar.tscn").instance()
-	_inject_tool(toolbar)
+	inject_tool(toolbar)
 	toolbar.plugin = self
 	
 	main = load("res://addons/friendly-potato-pixels/main.tscn").instance()
-	_inject_tool(main)
+	inject_tool(main)
 	main.plugin = self
 	
 	main.toolbar = toolbar
@@ -92,7 +92,7 @@ func get_plugin_name():
 func get_plugin_icon():
 	return get_editor_interface().get_base_control().get_icon("CanvasLayer", "EditorIcons")
 
-func _inject_tool(node: Node) -> void:
+func inject_tool(node: Node) -> void:
 	"""
 	Inject `tool` at the top of the plugin script
 	"""

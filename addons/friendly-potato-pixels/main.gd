@@ -2,6 +2,9 @@ extends Control
 
 signal message_sent(text)
 
+const SETUP_UTIL_PATH: String = "res://addons/friendly-potato-pixels/standalone/setup_util.gd"
+const NEW_FILE_POPUP_PATH: String = "res://addons/friendly-potato-pixels/new_file_dialog.tscn"
+
 const INITIAL_CANVAS_SCALE: float = 10.0
 const ZOOM_INCREMENT := Vector2(0.4, 0.4)
 
@@ -53,7 +56,7 @@ func _ready() -> void:
 		5. Menu bar
 	"""
 	if not Engine.editor_hint:
-		var setup_util: Object = load("res://addons/friendly-potato-pixels/standalone/setup_util.gd").new()
+		var setup_util: Object = load(SETUP_UTIL_PATH).new()
 		
 		plugin = setup_util.create_dummy_plugin()
 		add_child(plugin)
@@ -149,6 +152,20 @@ func _on_color_dropper_pressed() -> void:
 
 # Menu bar
 
+func _on_new_pressed() -> void:
+	var popup = load(NEW_FILE_POPUP_PATH).instance()
+	plugin.inject_tool(popup)
+	
+	popup.connect("confirmed", self, "_on_new_file_confirmed")
+	
+	plugin.get_editor_interface().get_editor_viewport().add_child(popup)
+
+func _on_new_file_confirmed(canvas_size: Vector2) -> void:
+	var img := Image.new()
+	img.create(canvas_size.x, canvas_size.y, false, Image.FORMAT_RGBA8)
+	
+	_on_image_loaded(img)
+
 func _on_save_pressed() -> void:
 	save_item()
 
@@ -208,6 +225,11 @@ func _blit() -> void:
 	var tex := ImageTexture.new()
 	tex.create_from_image(image, 0)
 	sprite.texture = tex
+
+func _create_file_select() -> FileDialog:
+	var r := FileDialog.new()
+	
+	return r
 
 ###############################################################################
 # Public functions                                                            #

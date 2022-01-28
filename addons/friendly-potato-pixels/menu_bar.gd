@@ -6,6 +6,7 @@ onready var tree: Tree = $HSplitContainer/Tree
 
 onready var messaging: Label = $HSplitContainer/Menu/Messaging
 
+onready var new_button: Button = $HSplitContainer/Menu/New
 onready var save_button: Button = $HSplitContainer/Menu/SaveButtons/Save
 onready var save_as_button: Button = $HSplitContainer/Menu/SaveButtons/SaveAs
 onready var load_button: Button = $HSplitContainer/Menu/Load
@@ -42,13 +43,14 @@ func _on_message_sent(text: String) -> void:
 # Public functions                                                            #
 ###############################################################################
 
-func register_main(node: Node) -> void:
+func register_main(n: Node) -> void:
 	if not is_registered:
-		node.logger.connect("on_log", self, "_on_message_sent")
+		n.logger.connect("on_log", self, "_on_message_sent")
 		
-		save_button.connect("pressed", node, "_on_save_pressed")
-		save_as_button.connect("pressed", node, "_on_save_as_pressed")
-		load_button.connect("pressed", node, "_on_load_pressed")
-		revert_button.connect("pressed", node, "_on_revert_pressed")
+		new_button.connect("pressed", n, "_on_new_pressed")
+		save_button.connect("pressed", n, "_on_save_pressed")
+		save_as_button.connect("pressed", n, "_on_save_as_pressed")
+		load_button.connect("pressed", n, "_on_load_pressed")
+		revert_button.connect("pressed", n, "_on_revert_pressed")
 		
 		is_registered = true
