@@ -136,6 +136,8 @@ func _on_screen_resized() -> void:
 	
 	canvas.global_position = viewport.size / 2
 
+# Toolbar
+
 func _on_pencil_pressed() -> void:
 	pass
 
@@ -152,10 +154,24 @@ func _on_color_dropper_pressed() -> void:
 	clicks_to_ignore += 1
 	is_drawing = false
 
+# Menu bar
+
+func _on_save_pressed() -> void:
+	save_item()
+
+func _on_save_as_pressed() -> void:
+	logger.error("Not yet implemented")
+
+func _on_load_pressed() -> void:
+	logger.error("Not yet implemented")
+
+func _on_revert_pressed() -> void:
+	save_util.open_cached_image()
+
 func _on_image_loaded(i: Image) -> void:
 	image.unlock()
 	
-#	save_util
+	save_util
 	
 	image = i
 	image.lock()
@@ -191,3 +207,9 @@ func _blit() -> void:
 ###############################################################################
 # Public functions                                                            #
 ###############################################################################
+
+func open_item(path: String) -> void:
+	save_util.open_item(path)
+
+func save_item() -> void:
+	save_util.save_image()

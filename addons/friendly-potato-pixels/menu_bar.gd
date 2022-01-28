@@ -6,6 +6,11 @@ onready var tree: Tree = $HSplitContainer/Tree
 
 onready var messaging: Label = $HSplitContainer/Menu/Messaging
 
+onready var save_button: Button = $HSplitContainer/Menu/SaveButtons/Save
+onready var save_as_button: Button = $HSplitContainer/Menu/SaveButtons/SaveAs
+onready var load_button: Button = $HSplitContainer/Menu/Load
+onready var revert_button: Button = $HSplitContainer/Menu/Revert
+
 ###############################################################################
 # Builtin functions                                                           #
 ###############################################################################
@@ -37,3 +42,8 @@ func _on_message_sent(text: String) -> void:
 
 func register_main(node: Node) -> void:
 	node.logger.connect("on_log", self, "_on_message_sent")
+	
+	save_button.connect("pressed", node, "_on_save_pressed")
+	save_as_button.connect("pressed", node, "_on_save_as_pressed")
+	load_button.connect("pressed", node, "_on_load_pressed")
+	revert_button.connect("pressed", node, "_on_revert_pressed")

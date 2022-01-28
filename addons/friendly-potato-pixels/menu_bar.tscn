@@ -40,30 +40,34 @@ margin_bottom = 872.0
 margin_right = 1460.0
 margin_bottom = 14.0
 
-[node name="SaveLoadButtons" type="HBoxContainer" parent="HSplitContainer/Menu"]
+[node name="SaveButtons" type="HBoxContainer" parent="HSplitContainer/Menu"]
 margin_top = 18.0
 margin_right = 1460.0
 margin_bottom = 38.0
 
-[node name="Save" type="Button" parent="HSplitContainer/Menu/SaveLoadButtons"]
-margin_right = 484.0
+[node name="Save" type="Button" parent="HSplitContainer/Menu/SaveButtons"]
+margin_right = 728.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 text = "Save"
 
-[node name="SaveAs" type="Button" parent="HSplitContainer/Menu/SaveLoadButtons"]
-margin_left = 488.0
-margin_right = 972.0
+[node name="SaveAs" type="Button" parent="HSplitContainer/Menu/SaveButtons"]
+margin_left = 732.0
+margin_right = 1460.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 text = "Save As"
 
-[node name="Load" type="Button" parent="HSplitContainer/Menu/SaveLoadButtons"]
-margin_left = 976.0
+[node name="Load" type="Button" parent="HSplitContainer/Menu"]
+margin_top = 42.0
 margin_right = 1460.0
-margin_bottom = 20.0
-size_flags_horizontal = 3
-size_flags_vertical = 3
+margin_bottom = 62.0
 text = "Load"
+
+[node name="Revert" type="Button" parent="HSplitContainer/Menu"]
+margin_top = 66.0
+margin_right = 1460.0
+margin_bottom = 86.0
+text = "Revert"
