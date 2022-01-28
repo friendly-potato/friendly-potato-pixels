@@ -83,17 +83,10 @@ func _ready() -> void:
 	while toolbar == null and menu_bar == null:
 		yield(get_tree(), "idle_frame")
 	
-	# Shift canvas children over since the sprite is intentionally not centered
-	sprite.position.x -= sprite.texture.get_width() / 2
-	sprite.position.y -= sprite.texture.get_height() / 2
-	cells.position = sprite.position
-	
+	# This order is intentional so we can access the image data before locking it for drawing
 	image = sprite.texture.get_data().duplicate()
+	_setup()
 	image.lock()
-	
-	toolbar.register_main(self)
-	menu_bar.register_main(self)
-	save_util.register_main(self)
 	
 	logger.info("Friendly Potato Pixels started")
 
@@ -170,18 +163,30 @@ func _on_revert_pressed() -> void:
 
 func _on_image_loaded(i: Image) -> void:
 	image.unlock()
-	
-	save_util
-	
 	image = i
 	image.lock()
+	
 	var tex := ImageTexture.new()
 	tex.create_from_image(image, 0)
 	sprite.texture = tex
+	
+	_setup()
 
 ###############################################################################
 # Private functions                                                           #
 ###############################################################################
+
+func _setup() -> void:
+	# Shift canvas children over since the sprite is intentionally not centered
+	sprite.position = Vector2.ZERO
+	
+	sprite.position.x -= sprite.texture.get_width() / 2
+	sprite.position.y -= sprite.texture.get_height() / 2
+	cells.position = sprite.position
+	
+	toolbar.register_main(self)
+	menu_bar.register_main(self)
+	save_util.register_main(self)
 
 func _blit() -> void:
 	var pos: Vector2 = cells.world_to_map(cells.to_local(viewport.get_mouse_position() / viewport_container.rect_scale))

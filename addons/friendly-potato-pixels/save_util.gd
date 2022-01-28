@@ -18,6 +18,8 @@ var cache_path := "%s/%s" % [OS.get_cache_dir(), CACHE_FOLDER_NAME]
 var last_file_path := ""
 var current_file_path := ""
 
+var is_registered := false
+
 ###############################################################################
 # Builtin functions                                                           #
 ###############################################################################
@@ -46,8 +48,11 @@ static func _create_cache_folder(path: String) -> int:
 ###############################################################################
 
 func register_main(n: Node) -> void:
-	main = n
-	connect("image_loaded", n, "_on_image_loaded")
+	if not is_registered:
+		main = n
+		connect("image_loaded", n, "_on_image_loaded")
+		
+		is_registered = true
 
 func save_input_event(event: InputEvent) -> int:
 	var r: int = OK

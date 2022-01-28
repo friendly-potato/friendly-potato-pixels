@@ -17,6 +17,8 @@ onready var size_h_slider: HSlider = $PanelContainer/VBoxContainer/SizeContainer
 
 onready var color_picker: ColorPicker = $PanelContainer/VBoxContainer/ColorPicker
 
+var is_registered := false
+
 ###############################################################################
 # Builtin functions                                                           #
 ###############################################################################
@@ -55,16 +57,21 @@ func _on_size_h_slider_value_changed(value: float) -> void:
 # Public functions                                                            #
 ###############################################################################
 
-func register_main(node: Node) -> void:
-	pencil.connect("pressed", node, "_on_pencil_pressed")
-	smart_brush.connect("pressed", node, "_on_smart_brush_pressed")
+func register_main(n: Node) -> void:
+	if not is_registered:
+		pencil.connect("pressed", n, "_on_pencil_pressed")
+		smart_brush.connect("pressed", n, "_on_smart_brush_pressed")
+		
+		connect("brush_size_changed", n, "_on_brush_size_changed")
+		
+		color_picker.connect("color_changed", n, "_on_color_changed")
+		color_picker.get_child(1).get_child(1).connect("pressed", n, "_on_color_dropper_pressed")
+		
+		is_registered = true
 	
-	max_brush_size = max(node.image.get_width(), node.image.get_height())
+	max_brush_size = max(n.image.get_width(), n.image.get_height())
 	size_h_slider.max_value = max_brush_size
-	connect("brush_size_changed", node, "_on_brush_size_changed")
 	_on_size_h_slider_value_changed(1.0)
 	
-	color_picker.connect("color_changed", node, "_on_color_changed")
 	color_picker.color = DEFAULT_COLOR
 	color_picker.emit_signal("color_changed", DEFAULT_COLOR)
-	color_picker.get_child(1).get_child(1).connect("pressed", node, "_on_color_dropper_pressed")
