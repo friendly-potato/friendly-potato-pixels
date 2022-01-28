@@ -4,6 +4,7 @@ signal message_sent(text)
 
 const SETUP_UTIL_PATH: String = "res://addons/friendly-potato-pixels/standalone/setup_util.gd"
 const NEW_FILE_POPUP_PATH: String = "res://addons/friendly-potato-pixels/new_file_dialog.tscn"
+const LAYER_PATH: String = "res://addons/friendly-potato-pixels/layer.tscn"
 
 const INITIAL_CANVAS_SCALE: float = 10.0
 const ZOOM_INCREMENT := Vector2(0.4, 0.4)
@@ -163,6 +164,7 @@ func _on_new_pressed() -> void:
 func _on_new_file_confirmed(canvas_size: Vector2) -> void:
 	var img := Image.new()
 	img.create(canvas_size.x, canvas_size.y, false, Image.FORMAT_RGBA8)
+	img.fill(Color.white)
 	
 	_on_image_loaded(img)
 
@@ -229,7 +231,18 @@ func _blit() -> void:
 func _create_file_select() -> FileDialog:
 	var r := FileDialog.new()
 	
+	# TODO
+	logger.trace("stubbed")
+	
 	return r
+
+func _create_layer() -> Node2D:
+	var layer: Node2D = load(LAYER_PATH).instance()
+	
+	# TODO
+	logger.trace("stubbed")
+	
+	return layer
 
 ###############################################################################
 # Public functions                                                            #
