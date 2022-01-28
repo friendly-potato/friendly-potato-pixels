@@ -11,6 +11,9 @@ const ZOOM_INCREMENT := Vector2(0.4, 0.4)
 
 const MAX_ALPHA: int = 255
 
+const DEFAULT_LAYER_COLOR := Color.white
+const DEFAULT_LAYER_CANVAS_SIZE := Vector2(32, 32)
+
 var plugin: Node
 var undo_redo
 
@@ -23,8 +26,10 @@ var save_util = load("res://addons/friendly-potato-pixels/save_util.gd").new()
 onready var viewport_container: ViewportContainer = $ViewportContainer
 onready var viewport: Viewport = $ViewportContainer/Viewport
 onready var canvas: Node2D = $ViewportContainer/Viewport/Canvas
-onready var sprite: Sprite = $ViewportContainer/Viewport/Canvas/Sprite
 onready var cells: TileMap = $ViewportContainer/Viewport/Canvas/Cells
+
+onready var layers: Node2D = $ViewportContainer/Viewport/Canvas/Layers
+var current_layer: Node2D
 
 # The thing actually being drawn to
 var image: Image
@@ -88,9 +93,12 @@ func _ready() -> void:
 		yield(get_tree(), "idle_frame")
 	
 	# This order is intentional so we can access the image data before locking it for drawing
-	image = sprite.texture.get_data().duplicate()
+	var img := Image.new()
+	img.load("res://icon.png")
+	
+	current_layer = _create_layer([img.get_data(), img.get_size()])
+	layers.add_child(current_layer)
 	_setup()
-	image.lock()
 	
 	logger.info("Friendly Potato Pixels started")
 
@@ -181,13 +189,11 @@ func _on_revert_pressed() -> void:
 	save_util.open_cached_image()
 
 func _on_image_loaded(i: Image) -> void:
-	image.unlock()
-	image = i
-	image.lock()
+	for layer in layers.get_children():
+		layer.queue_free()
 	
-	var tex := ImageTexture.new()
-	tex.create_from_image(image, 0)
-	sprite.texture = tex
+	current_layer = _create_layer([i.get_data()])
+	layers.add_child(current_layer)
 	
 	_setup()
 
@@ -197,11 +203,11 @@ func _on_image_loaded(i: Image) -> void:
 
 func _setup() -> void:
 	# Shift canvas children over since the sprite is intentionally not centered
-	sprite.position = Vector2.ZERO
+	layers.position = Vector2.ZERO
 	
-	sprite.position.x -= sprite.texture.get_width() / 2
-	sprite.position.y -= sprite.texture.get_height() / 2
-	cells.position = sprite.position
+	layers.position.x -= float(current_layer.base_sprite.texture.get_width()) / 2
+	layers.position.y -= float(current_layer.base_sprite.texture.get_height()) / 2
+	cells.position = layers.position
 	
 	toolbar.register_main(self)
 	menu_bar.register_main(self)
@@ -212,21 +218,21 @@ func _blit() -> void:
 	if pos == last_pixel_pos:
 		return
 	last_pixel_pos = pos
-		
-	var blit: Object = brush.paint(pos, image)
+	
+	var blit: Object = brush.paint(pos, current_layer.base_image)
 	
 	# TODO additional blit operations
 	
 	for vec in blit.position_data:
-		var pix_color := image.get_pixelv(vec)
+		var pix_color: Color = current_layer.base_image.get_pixelv(vec)
 		
-		image.set_pixelv(vec, pix_color.blend(primary_color))
+		current_layer.base_image.set_pixelv(vec, pix_color.blend(primary_color))
 	
 	blit.free()
 	
 	var tex := ImageTexture.new()
-	tex.create_from_image(image, 0)
-	sprite.texture = tex
+	tex.create_from_image(current_layer.base_image, 0)
+	current_layer.base_sprite.texture = tex
 
 func _create_file_select() -> FileDialog:
 	var r := FileDialog.new()
@@ -236,11 +242,38 @@ func _create_file_select() -> FileDialog:
 	
 	return r
 
-func _create_layer() -> Node2D:
+func _create_layer(data: Array = []) -> Node2D:
 	var layer: Node2D = load(LAYER_PATH).instance()
+	plugin.inject_tool(layer)
 	
-	# TODO
-	logger.trace("stubbed")
+	var initial_color := DEFAULT_LAYER_COLOR
+	var initial_canvas_size := DEFAULT_LAYER_CANVAS_SIZE
+	var initial_image: Image
+	var initial_image_data
+	
+	if not data.empty():
+		for d in data:
+			match typeof(d):
+				TYPE_COLOR:
+					initial_color = d
+				TYPE_VECTOR2:
+					initial_canvas_size = d
+				TYPE_RAW_ARRAY:
+					initial_image_data = d
+				_:
+					logger.error("Unrecognized param for layer: %s" % str(d))
+		
+	# We have image data so create an input image for the layer
+	# Don't check for initial canvas size since that should always be provided
+	# If it's not, then I'm not sure what's going to happen
+	if initial_image_data != null:
+		initial_image = Image.new()
+		initial_image.create_from_data(initial_canvas_size.x, initial_canvas_size.y,
+				false, Image.FORMAT_RGBA8, initial_image_data)
+		layer.input_image = initial_image
+	else:
+		layer.input_canvas_size = initial_canvas_size
+		layer.input_color = initial_color
 	
 	return layer
 

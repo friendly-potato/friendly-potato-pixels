@@ -9,4 +9,5 @@ script = ExtResource( 1 )
 centered = false
 
 [node name="TransformSprite" type="Sprite" parent="."]
+visible = false
 centered = false

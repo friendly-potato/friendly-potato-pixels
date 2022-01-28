@@ -56,7 +56,8 @@ func register_main(n: Node) -> void:
 
 func save_input_event(event: InputEvent) -> int:
 	var r: int = OK
-	if not main.visible:
+	# TODO Prevents race condition, there's a better solution I think
+	if main != null and not main.visible:
 		return r
 	if not event is InputEventKey:
 		return r

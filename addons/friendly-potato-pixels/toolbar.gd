@@ -69,7 +69,8 @@ func register_main(n: Node) -> void:
 		
 		is_registered = true
 	
-	max_brush_size = max(n.image.get_width(), n.image.get_height())
+#	max_brush_size = max(n.image.get_width(), n.image.get_height())
+	max_brush_size = max(n.current_layer.base_image.get_width(), n.current_layer.base_image.get_height())
 	size_h_slider.max_value = max_brush_size
 	_on_size_h_slider_value_changed(1.0)
 	
