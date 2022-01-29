@@ -56,7 +56,8 @@ func _exit_tree():
 		file_system.disconnect("multi_selected", self, "_on_file_system_multi_selected")
 
 func save_external_data():
-	main.save_item()
+	if main.save_item() != OK:
+		main.logger.error("Unable to save image")
 
 func enable_plugin():
 	get_editor_interface().set_main_screen_editor(PLUGIN_NAME)

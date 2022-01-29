@@ -28,13 +28,12 @@ onready var viewport: Viewport = $ViewportContainer/Viewport
 onready var canvas: Node2D = $ViewportContainer/Viewport/Canvas
 onready var cells: TileMap = $ViewportContainer/Viewport/Canvas/Cells
 
+# The thing actually being drawn to
 onready var layers: Node2D = $ViewportContainer/Viewport/Canvas/Layers
 var current_layer: Node2D
 
-# The thing actually being drawn to
-var image: Image
-
 # Control data
+var half_viewport_size: Vector2 = Vector2.ONE
 var move_canvas := false
 var is_drawing := false
 var clicks_to_ignore: int = 0
@@ -69,17 +68,11 @@ func _ready() -> void:
 		
 		plugin.main = self
 		
-		var tb_control: Control = setup_util.setup_toolbar_control()
-		add_child(tb_control)
-		
 		toolbar = setup_util.create_toolbar()
-		tb_control.add_child(toolbar)
-		
-		var mb_control: Control = setup_util.setup_menu_bar_control()
-		add_child(mb_control)
+		add_child(toolbar)
 		
 		menu_bar = setup_util.create_menu_bar()
-		mb_control.add_child(menu_bar)
+		add_child(menu_bar)
 		
 		setup_util.free()
 	
@@ -92,12 +85,9 @@ func _ready() -> void:
 	while toolbar == null and menu_bar == null:
 		yield(get_tree(), "idle_frame")
 	
-	# This order is intentional so we can access the image data before locking it for drawing
-	var img := Image.new()
-	img.load("res://icon.png")
-	
-	current_layer = _create_layer([img.get_data(), img.get_size()])
+	current_layer = _create_layer()
 	layers.add_child(current_layer)
+	
 	_setup()
 	
 	logger.info("Friendly Potato Pixels started")
@@ -124,7 +114,8 @@ func _gui_input(event: InputEvent) -> void:
 				
 	elif event is InputEventMouseMotion:
 		if move_canvas:
-			viewport.canvas_transform = viewport.canvas_transform.translated(Vector2(event.relative.x, event.relative.y) / viewport.canvas_transform.get_scale())
+			viewport.canvas_transform = viewport.canvas_transform.translated(
+				Vector2(event.relative.x, event.relative.y) / viewport.canvas_transform.get_scale())
 		if is_drawing:
 			_blit()
 
@@ -139,7 +130,8 @@ func _exit_tree() -> void:
 ###############################################################################
 
 func _on_screen_resized() -> void:
-	viewport.canvas_transform.origin = viewport.size / 2
+	half_viewport_size = viewport.size / 2
+	viewport.canvas_transform.origin = half_viewport_size
 	viewport.canvas_transform.x *= INITIAL_CANVAS_SCALE
 	viewport.canvas_transform.y *= INITIAL_CANVAS_SCALE
 
@@ -216,8 +208,11 @@ func _setup() -> void:
 	save_util.register_main(self)
 
 func _blit() -> void:
-	var can_val = (viewport.get_mouse_position() - (viewport.size / 2) + ((viewport.size / 2) - viewport.canvas_transform.origin)) / viewport.canvas_transform.get_scale()
-	var pos: Vector2 = cells.world_to_map(cells.to_local(can_val))
+	var pos: Vector2 = cells.world_to_map(
+		cells.to_local(
+			(viewport.get_mouse_position() - half_viewport_size +
+				(half_viewport_size - viewport.canvas_transform.origin)) /
+					viewport.canvas_transform.get_scale()))
 	if pos == last_pixel_pos:
 		return
 	last_pixel_pos = pos
@@ -252,7 +247,8 @@ func _create_layer(data: Array = []) -> Node2D:
 	var initial_color := DEFAULT_LAYER_COLOR
 	var initial_canvas_size := DEFAULT_LAYER_CANVAS_SIZE
 	var initial_image: Image
-	var initial_image_data
+	# Intentionally left blank because Godot allocates an empty PoolByteArray by default
+	var initial_image_data # PoolByteArray
 	
 	if not data.empty():
 		for d in data:
@@ -284,8 +280,8 @@ func _create_layer(data: Array = []) -> Node2D:
 # Public functions                                                            #
 ###############################################################################
 
-func open_item(path: String) -> void:
-	save_util.open_item(path)
+func open_item(path: String) -> int:
+	return save_util.open_item(path)
 
-func save_item() -> void:
-	save_util.save_image()
+func save_item() -> int:
+	return save_util.save_image()
