@@ -2,6 +2,19 @@ extends Control
 
 signal message_sent(text)
 
+enum ErrorCode {
+	SAVE_FILE_DOES_NOT_EXIST = 201, # Don't overwrite the built-in error codes
+
+	UNABLE_TO_OPEN_IMAGE,
+	UNABLE_TO_SAVE_IMAGE,
+
+	UNABLE_TO_CREATE_CACHE_DIRECTORY,
+	UNABLE_TO_OPEN_CACHED_IMAGE,
+	UNABLE_TO_SAVE_TO_CACHE,
+	UNABLE_TO_ITERATE_OVER_CACHE,
+	UNABLE_TO_REMOVE_CACHE_ITEM
+}
+
 const SETUP_UTIL_PATH: String = "res://addons/friendly-potato-pixels/standalone/setup_util.gd"
 const NEW_FILE_POPUP_PATH: String = "res://addons/friendly-potato-pixels/new_file_dialog.tscn"
 const LAYER_PATH: String = "res://addons/friendly-potato-pixels/layer.tscn"
@@ -279,6 +292,13 @@ func _create_layer(data: Array = []) -> Node2D:
 ###############################################################################
 # Public functions                                                            #
 ###############################################################################
+
+# TODO we need to flatten all layers into one
+func image() -> Image:
+	"""
+	Flatten all layers into 1 and return the composite image
+	"""
+	return current_layer.base_image
 
 func open_item(path: String) -> int:
 	return save_util.open_item(path)

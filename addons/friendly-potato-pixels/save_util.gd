@@ -37,10 +37,11 @@ func _init() -> void:
 ###############################################################################
 
 # TODO unused?
-static func _create_cache_folder(path: String) -> int:
+func _create_cache_folder(path: String) -> int:
 	var dir := Directory.new()
 	if not dir.dir_exists(path):
-		return dir.make_dir(path)
+		if dir.make_dir(path) != OK:
+			return main.ErrorCode.UNABLE_TO_CREATE_CACHE_DIRECTORY
 	return OK
 
 ###############################################################################
@@ -50,22 +51,22 @@ static func _create_cache_folder(path: String) -> int:
 func register_main(n: Node) -> void:
 	if not is_registered:
 		main = n
+		# warning-ignore:return_value_discarded
 		connect("image_loaded", n, "_on_image_loaded")
 		
 		is_registered = true
 
 func save_input_event(event: InputEvent) -> int:
-	var r: int = OK
 	# TODO Prevents race condition, there's a better solution I think
 	if main != null and not main.visible:
-		return r
+		return OK
 	if not event is InputEventKey:
-		return r
+		return OK
 	
 	if (event.control == true and event.scancode == KEY_S and event.pressed):
-		r = save_image()
+		return save_image()
 	
-	return r
+	return OK
 
 func open_item(text: String) -> int:
 	"""
@@ -104,58 +105,49 @@ func open_item(text: String) -> int:
 	return r
 
 func open_cached_image() -> int:
-	var r: int = OK
 	var image := Image.new()
 	
 	var path := "%s/%s" % [cache_path, current_file_path.get_file()]
-	r = image.load(path)
-	if r != OK:
+	if image.load(path) != OK:
 		main.logger.error("Unable to open cached image for reading at path %s" % path)
-		return r
+		return main.ErrorCode.UNABLE_TO_OPEN_CACHED_IMAGE
 	
 	emit_signal("image_loaded", image)
 	
-	return r
+	return OK
 
 func save_image(current: bool = true) -> int:
-	var r: int = OK
-	
 	var path := current_file_path if current else last_file_path
 	if path.empty():
-		return r
+		return main.ErrorCode.SAVE_FILE_DOES_NOT_EXIST
 	
 	var file_name := path.get_file()
 	
 	main.logger.info("Saving file at path %s" % path)
 	
-	main.image.unlock()
+	main.image().unlock()
 	
-	r = main.image.save_png(path)
-	if r != OK:
+	if main.image.save_png(path) != OK:
 		main.logger.error("Unable to save png at path %s" % path)
-		main.image.lock()
-		return r
+		main.image().lock() # Relock the image anyways
+		return main.ErrorCode.UNABLE_TO_SAVE_IMAGE
 	
-	main.image.lock()
+	main.image().lock()
 	
 	main.logger.info("Successfully saved file at path %s" % path)
 	
-	return r
+	return OK
 
 func clear_cache() -> int:
 	var dir := Directory.new()
 	if not dir.dir_exists(cache_path):
 		return dir.make_dir(cache_path)
 	
-	var r: int = OK
+	if dir.open(cache_path) != OK:
+		return main.ErrorCode.UNABLE_TO_OPEN_CACHED_IMAGE
 	
-	r = dir.open(cache_path)
-	if r != OK:
-		return r
-	
-	r = dir.list_dir_begin(true, false)
-	if r != OK:
-		return r
+	if dir.list_dir_begin(true, false) != OK:
+		return main.ErrorCode.UNABLE_TO_ITERATE_OVER_CACHE
 	
 	var files_to_delete := []
 	
@@ -165,8 +157,7 @@ func clear_cache() -> int:
 		file_name = dir.get_next()
 	
 	for f in files_to_delete:
-		r = dir.remove("%s/%s" % [cache_path, f])
-		if r != OK:
-			return r
+		if dir.remove("%s/%s" % [cache_path, f]) != OK:
+			return main.ErrorCode.UNABLE_TO_REMOVE_CACHE_ITEM
 	
-	return r
+	return OK
