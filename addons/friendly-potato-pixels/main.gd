@@ -116,12 +116,15 @@ func _gui_input(event: InputEvent) -> void:
 			BUTTON_MIDDLE:
 				move_canvas = event.pressed
 			BUTTON_WHEEL_UP:
-				viewport_container.rect_scale += ZOOM_INCREMENT
+				viewport.canvas_transform.x *= 1.1
+				viewport.canvas_transform.y *= 1.1
 			BUTTON_WHEEL_DOWN:
-				viewport_container.rect_scale -= ZOOM_INCREMENT
+				viewport.canvas_transform.x /= 1.1
+				viewport.canvas_transform.y /= 1.1
+				
 	elif event is InputEventMouseMotion:
 		if move_canvas:
-			canvas.global_position += event.relative / viewport_container.rect_scale
+			viewport.canvas_transform = viewport.canvas_transform.translated(Vector2(event.relative.x, event.relative.y) / viewport.canvas_transform.get_scale())
 		if is_drawing:
 			_blit()
 
@@ -136,10 +139,9 @@ func _exit_tree() -> void:
 ###############################################################################
 
 func _on_screen_resized() -> void:
-	viewport_container.rect_pivot_offset = viewport.size / 2
-	viewport_container.rect_scale = (INITIAL_CANVAS_SCALE * ZOOM_INCREMENT)
-	
-	canvas.global_position = viewport.size / 2
+	viewport.canvas_transform.origin = viewport.size / 2
+	viewport.canvas_transform.x *= INITIAL_CANVAS_SCALE
+	viewport.canvas_transform.y *= INITIAL_CANVAS_SCALE
 
 # Toolbar
 
@@ -214,7 +216,8 @@ func _setup() -> void:
 	save_util.register_main(self)
 
 func _blit() -> void:
-	var pos: Vector2 = cells.world_to_map(cells.to_local(viewport.get_mouse_position() / viewport_container.rect_scale))
+	var can_val = (viewport.get_mouse_position() - (viewport.size / 2) + ((viewport.size / 2) - viewport.canvas_transform.origin)) / viewport.canvas_transform.get_scale()
+	var pos: Vector2 = cells.world_to_map(cells.to_local(can_val))
 	if pos == last_pixel_pos:
 		return
 	last_pixel_pos = pos
