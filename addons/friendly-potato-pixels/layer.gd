@@ -37,15 +37,20 @@ func _ready() -> void:
 		base_image = Image.new()
 		base_image.create(input_canvas_size.x, input_canvas_size.y, false, Image.FORMAT_RGBA8)
 		base_image.fill(input_color)
+
+	base_image.lock()
 	
 	base_sprite.texture = _create_texture(base_image)
-	base_image.lock()
-
+	
 	predraw_image = base_image.duplicate()
+	# predraw_image = Image.new()
+	# predraw_image.create(base_image.get_width(), base_image.get_height(), false, Image.FORMAT_RGBA8)
+
 	predraw_image.fill(CLEAR_COLOR)
 
-	predraw_sprite.texture = _create_texture(predraw_image)
 	predraw_image.lock()
+
+	predraw_sprite.texture = _create_texture(predraw_image)
 
 ###############################################################################
 # Connections                                                                 #
@@ -65,8 +70,15 @@ static func _create_texture(img: Image) -> ImageTexture:
 # Public functions                                                            #
 ###############################################################################
 
+func predraw_refresh() -> void:
+	predraw_sprite.texture = _create_texture(predraw_image)
+
 func predraw_commit() -> void:
-	pass
+	predraw_image.fill(CLEAR_COLOR)
+	# Image.fill implicitly locks/unlocks the image for you
+	# Not documented
+	predraw_image.lock()
+	predraw_refresh()
 
 func transform_commit() -> void:
 	pass

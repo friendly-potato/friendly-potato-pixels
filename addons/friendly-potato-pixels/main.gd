@@ -17,6 +17,13 @@ enum ErrorCode {
 	UNABLE_TO_REMOVE_CACHE_ITEM
 }
 
+# Duplicated from `last_action_data.gd` since we're avoiding autoloads
+enum ActionType {
+	NONE = 0,
+	BLIT,
+	TRANSFORM
+}
+
 #region Script/scene paths
 
 const SETUP_UTIL_PATH := "res://addons/friendly-potato-pixels/standalone/setup_util.gd"
@@ -28,7 +35,6 @@ const LOAD_FILE_POPUP_PATH := "res://addons/friendly-potato-pixels/popups/load_f
 const LAYER_PATH := "res://addons/friendly-potato-pixels/layer.tscn"
 
 const LAST_ACTION_DATA := "res://addons/friendly-potato-pixels/last_action_data.gd"
-const UNDO_REDO_PAYLOAD := "res://addons/friendly-potato-pixels/undo_redo_payload.gd"
 
 #endregion
 
@@ -144,6 +150,8 @@ func _gui_input(event: InputEvent) -> void:
 					clicks_to_ignore -= 1
 				else:
 					is_drawing = event.pressed
+					if is_drawing:
+						last_action_data = _create_lad()
 					_blit(is_drawing)
 			BUTTON_RIGHT:
 				pass
@@ -215,10 +223,7 @@ func _on_new_pressed() -> void:
 	_add_popup(popup)
 
 func _on_new_file_confirmed(canvas_size: Vector2) -> void:
-	var img := Image.new()
-	img.create(canvas_size.x, canvas_size.y, false, Image.FORMAT_RGBA8)
-	img.fill(Color.white)
-	
+	save_util.current_file_path = ""
 	_on_image_loaded([canvas_size, Color.white])
 
 #endregion
@@ -298,6 +303,10 @@ func _setup() -> void:
 #region Blit
 
 func _blit(drawing_active: bool = true) -> void:
+	if not drawing_active:
+		_add_to_undo_redo()
+		current_layer.predraw_commit()
+		return
 	var pos: Vector2 = cells.world_to_map(
 		cells.to_local(
 			(viewport.get_mouse_position() - half_viewport_size +
@@ -309,22 +318,21 @@ func _blit(drawing_active: bool = true) -> void:
 	
 	var blit: Reference = brush.paint(pos, current_layer.base_image)
 	
-	# TODO additional blit operations
-	
+	# TODO add intermediate blit operations
+
 	for vec in blit.position_data:
-		var pix_color: Color = current_layer.base_image.get_pixelv(vec)
-		
-		current_layer.base_image.set_pixelv(vec, pix_color.blend(primary_color))
-	
-	var tex := ImageTexture.new()
-	tex.create_from_image(current_layer.base_image, 0)
-	current_layer.base_sprite.texture = tex
+		var old_color: Color = current_layer.base_image.get_pixelv(vec)
+		var new_color := old_color.blend(primary_color)
 
-func _blit_from_data(data: Array) -> void:
-	pass
+		blit.new_color_data.append(old_color.blend(primary_color))
+		blit.old_color_data.append(old_color)
 
-func _unblit_from_data(data: Array) -> void:
-	pass
+		# current_layer.predraw_image.lock()
+		current_layer.predraw_image.set_pixelv(vec, new_color)
+
+	last_action_data.add_blit(blit)
+
+	current_layer.predraw_refresh()
 
 #endregion
 
@@ -383,18 +391,52 @@ func _determine_default_search_path() -> String:
 		return output[0].strip_edges()
 	return "/"
 
-func _add_to_undo_redo(data: Object) -> void:
-	"""
-	Wrapper for adding undo/redo data
-	"""
-	undo_redo.create_action(data.action_name)
-	undo_redo.add_do_method(data.do_caller, data.do_method)
-	undo_redo.add_do_method(data.undo_caller, data.undo_method)
-	undo_redo.commit_action()
+#region Undo redo
+
+func _create_lad() -> Reference:
+	var lad = load(LAST_ACTION_DATA).new()
+	lad.main = self
+	return lad
+
+func _add_to_undo_redo() -> void:
+	match last_action_data.type:
+		ActionType.BLIT:
+			undo_redo.create_action("Blit data")
+			undo_redo.add_do_method(self, "blit_from_data", last_action_data.blit_data)
+			undo_redo.add_undo_method(self, "unblit_from_data", last_action_data.blit_data)
+			undo_redo.commit_action()
+		ActionType.TRANSFORM:
+			logger.trace("Not yet implemented")
+		_:
+			logger.error("ActionType not implemented")
+
+#endregion
 
 ###############################################################################
 # Public functions                                                            #
 ###############################################################################
+
+#region Blit
+
+func blit_from_data(data: Array) -> void:
+	for blit in data:
+		for i in blit.position_data.size():
+			current_layer.base_image.set_pixelv(blit.position_data[i], blit.new_color_data[i])
+
+	var tex := ImageTexture.new()
+	tex.create_from_image(current_layer.base_image, 0)
+	current_layer.base_sprite.texture = tex
+
+func unblit_from_data(data: Array) -> void:
+	for blit in data:
+		for i in blit.position_data.size():
+			current_layer.base_image.set_pixelv(blit.position_data[i], blit.old_color_data[i])
+
+	var tex := ImageTexture.new()
+	tex.create_from_image(current_layer.base_image, 0)
+	current_layer.base_sprite.texture = tex
+
+#endregion
 
 # TODO we need to flatten all layers into one
 func image() -> Image:
