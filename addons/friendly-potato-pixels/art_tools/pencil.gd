@@ -19,8 +19,8 @@ func _ready() -> void:
 # Public functions                                                            #
 ###############################################################################
 
-func paint(pos: Vector2, image: Image) -> Object:
-	var r: Object = BLIT.new()
+func paint(pos: Vector2, image: Image) -> Reference:
+	var r: Reference = BLIT.new()
 	
 	if size == 1:
 		if _is_valid_pos(pos.x, pos.y, image.get_width() - 1, image.get_height() - 1):

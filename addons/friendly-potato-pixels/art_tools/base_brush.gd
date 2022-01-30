@@ -39,8 +39,8 @@ func _fill_square(top_left: Vector2, positions: Array, max_w: int, max_h: int):
 # Public functions                                                            #
 ###############################################################################
 
-func paint(_pos: Vector2, _image: Image) -> Object:
-	var r: Object = BLIT.new()
+func paint(_pos: Vector2, _image: Image) -> Reference:
+	var r: Reference = BLIT.new()
 
 	print("unreachable")
 	

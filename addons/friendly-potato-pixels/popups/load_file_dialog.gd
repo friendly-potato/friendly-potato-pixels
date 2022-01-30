@@ -16,6 +16,7 @@ func _ready() -> void:
 	file_path_browse_button.connect("pressed", self, "_on_file_path_button_pressed")
 
 	file_path_line_edit.text = main.save_path
+	_on_file_path_line_edit_text_changed(file_path_line_edit.text)
 
 ###############################################################################
 # Connections                                                                 #

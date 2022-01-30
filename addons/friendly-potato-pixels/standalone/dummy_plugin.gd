@@ -13,10 +13,13 @@ func _init() -> void:
 func _input(event: InputEvent) -> void:
 	# Plugins can hook into the editor's built-in save functionality
 	# We can't, so we have to poll for the expected input
-	if event is InputEventKey:
-		if (event.control == true and event.scancode == KEY_S and event.pressed):
-			if main.save_image() != OK:
-				logger.error("Unable to save image")
+	if (event is InputEventKey and event.pressed):
+		if event.control:
+			match event.scancode:
+				KEY_S:
+					main.handle_error(main.save_image())
+				KEY_Z:
+					_undo_redo
 
 func inject_tool(_node: Node) -> void:
 	"""

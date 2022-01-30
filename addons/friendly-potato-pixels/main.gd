@@ -3,7 +3,9 @@ extends Control
 signal message_sent(text)
 
 enum ErrorCode {
-	SAVE_FILE_DOES_NOT_EXIST = 201, # Don't overwrite the built-in error codes
+	NONE = 200, # Don't overwrite the built-in error codes
+
+	SAVE_FILE_DOES_NOT_EXIST,
 
 	UNABLE_TO_OPEN_IMAGE,
 	UNABLE_TO_SAVE_IMAGE,
@@ -15,13 +17,20 @@ enum ErrorCode {
 	UNABLE_TO_REMOVE_CACHE_ITEM
 }
 
-const SETUP_UTIL_PATH: String = "res://addons/friendly-potato-pixels/standalone/setup_util.gd"
+#region Script/scene paths
 
-const NEW_FILE_POPUP_PATH: String = "res://addons/friendly-potato-pixels/popups/new_file_dialog.tscn"
-const SAVE_AS_FILE_POPUP_PATH: String = "res://addons/friendly-potato-pixels/popups/save_as_file_dialog.tscn"
-const LOAD_FILE_POPUP_PATH: String = "res://addons/friendly-potato-pixels/popups/load_file_dialog.tscn"
+const SETUP_UTIL_PATH := "res://addons/friendly-potato-pixels/standalone/setup_util.gd"
 
-const LAYER_PATH: String = "res://addons/friendly-potato-pixels/layer.tscn"
+const NEW_FILE_POPUP_PATH := "res://addons/friendly-potato-pixels/popups/new_file_dialog.tscn"
+const SAVE_AS_FILE_POPUP_PATH := "res://addons/friendly-potato-pixels/popups/save_as_file_dialog.tscn"
+const LOAD_FILE_POPUP_PATH := "res://addons/friendly-potato-pixels/popups/load_file_dialog.tscn"
+
+const LAYER_PATH := "res://addons/friendly-potato-pixels/layer.tscn"
+
+const LAST_ACTION_DATA := "res://addons/friendly-potato-pixels/last_action_data.gd"
+const UNDO_REDO_PAYLOAD := "res://addons/friendly-potato-pixels/undo_redo_payload.gd"
+
+#endregion
 
 const INITIAL_CANVAS_SCALE: float = 10.0
 const ZOOM_INCREMENT := Vector2(0.4, 0.4)
@@ -46,22 +55,35 @@ onready var viewport: Viewport = $ViewportContainer/Viewport
 onready var canvas: Node2D = $ViewportContainer/Viewport/Canvas
 onready var cells: TileMap = $ViewportContainer/Viewport/Canvas/Cells
 
-# The thing actually being drawn to
 onready var layers: Node2D = $ViewportContainer/Viewport/Canvas/Layers
 var current_layer: Node2D
 
-# Control data
+#region User control data
+
 var half_viewport_size: Vector2 = Vector2.ONE
 var move_canvas := false
 var is_drawing := false
 var clicks_to_ignore: int = 0
 
-# Art data
+#endregion
+
+#region Art data
+
 var last_pixel_pos := Vector2(-1, -1)
 var primary_color
 var secondary_color := Color.white
 
 var brush: Reference = load("res://addons/friendly-potato-pixels/art_tools/pencil.gd").new()
+
+#endregion
+
+#region Undo redo
+
+var action_data_pointer: int = -1
+var action_data := []
+var last_action_data: Reference
+
+#endregion
 
 ###############################################################################
 # Builtin functions                                                           #
@@ -122,7 +144,7 @@ func _gui_input(event: InputEvent) -> void:
 					clicks_to_ignore -= 1
 				else:
 					is_drawing = event.pressed
-					_blit()
+					_blit(is_drawing)
 			BUTTON_RIGHT:
 				pass
 			BUTTON_MIDDLE:
@@ -273,7 +295,9 @@ func _setup() -> void:
 	menu_bar.register_main(self)
 	save_util.register_main(self)
 
-func _blit() -> void:
+#region Blit
+
+func _blit(drawing_active: bool = true) -> void:
 	var pos: Vector2 = cells.world_to_map(
 		cells.to_local(
 			(viewport.get_mouse_position() - half_viewport_size +
@@ -283,7 +307,7 @@ func _blit() -> void:
 		return
 	last_pixel_pos = pos
 	
-	var blit: Object = brush.paint(pos, current_layer.base_image)
+	var blit: Reference = brush.paint(pos, current_layer.base_image)
 	
 	# TODO additional blit operations
 	
@@ -292,11 +316,17 @@ func _blit() -> void:
 		
 		current_layer.base_image.set_pixelv(vec, pix_color.blend(primary_color))
 	
-	blit.free()
-	
 	var tex := ImageTexture.new()
 	tex.create_from_image(current_layer.base_image, 0)
 	current_layer.base_sprite.texture = tex
+
+func _blit_from_data(data: Array) -> void:
+	pass
+
+func _unblit_from_data(data: Array) -> void:
+	pass
+
+#endregion
 
 func _create_layer(data: Array = []) -> Node2D:
 	var layer: Node2D = load(LAYER_PATH).instance()
@@ -353,6 +383,15 @@ func _determine_default_search_path() -> String:
 		return output[0].strip_edges()
 	return "/"
 
+func _add_to_undo_redo(data: Object) -> void:
+	"""
+	Wrapper for adding undo/redo data
+	"""
+	undo_redo.create_action(data.action_name)
+	undo_redo.add_do_method(data.do_caller, data.do_method)
+	undo_redo.add_do_method(data.undo_caller, data.undo_method)
+	undo_redo.commit_action()
+
 ###############################################################################
 # Public functions                                                            #
 ###############################################################################
@@ -362,6 +401,15 @@ func image() -> Image:
 	"""
 	Flatten all layers into 1 and return the composite image
 	"""
+	var images := []
+	for c in layers.get_children():
+		images.append(c.base_image)
+
+	for i in images:
+		i.unlock()
+	
+	# TODO Create composite from all image data here
+	
 	return current_layer.base_image
 
 func open_image(path: String) -> int:
@@ -384,7 +432,10 @@ func handle_error(error_code: int) -> void:
 		if i.get("function", "handle_error") == "handle_error":
 			handle_error_count += 1
 
-	logger.debug("Trying to handle error: %d" % error_code)
+	if error_code > ErrorCode.NONE:
+		logger.debug("Trying to handle custom error: %s" % ErrorCode.keys()[error_code - ErrorCode.NONE])
+	else:
+		logger.debug("Trying to handle built-in error: %d" % error_code)
 
 	match error_code:
 		ErrorCode.SAVE_FILE_DOES_NOT_EXIST:
