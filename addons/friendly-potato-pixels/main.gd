@@ -16,7 +16,11 @@ enum ErrorCode {
 }
 
 const SETUP_UTIL_PATH: String = "res://addons/friendly-potato-pixels/standalone/setup_util.gd"
+
 const NEW_FILE_POPUP_PATH: String = "res://addons/friendly-potato-pixels/popups/new_file_dialog.tscn"
+const SAVE_AS_FILE_POPUP_PATH: String = "res://addons/friendly-potato-pixels/popups/save_as_file_dialog.tscn"
+const LOAD_FILE_POPUP_PATH: String = "res://addons/friendly-potato-pixels/popups/load_file_dialog.tscn"
+
 const LAYER_PATH: String = "res://addons/friendly-potato-pixels/layer.tscn"
 
 const INITIAL_CANVAS_SCALE: float = 10.0
@@ -35,6 +39,7 @@ var menu_bar: Node
 
 var logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
 var save_util = load("res://addons/friendly-potato-pixels/save_util.gd").new()
+var save_path: String = ProjectSettings.globalize_path("res://")
 
 onready var viewport_container: ViewportContainer = $ViewportContainer
 onready var viewport: Viewport = $ViewportContainer/Viewport
@@ -88,6 +93,8 @@ func _ready() -> void:
 		add_child(menu_bar)
 		
 		setup_util.free()
+		
+		save_path = _determine_default_search_path()
 	
 	logger.setup(self)
 	
@@ -150,12 +157,14 @@ func _on_screen_resized() -> void:
 	viewport.canvas_transform.x *= INITIAL_CANVAS_SCALE
 	viewport.canvas_transform.y *= INITIAL_CANVAS_SCALE
 
-# Toolbar
+#region Toolbar
 
 func _on_pencil_pressed() -> void:
+	# TODO stub
 	pass
 
 func _on_smart_brush_pressed() -> void:
+	# TODO stub
 	pass
 
 func _on_brush_size_changed(value: int) -> void:
@@ -168,15 +177,19 @@ func _on_color_dropper_pressed() -> void:
 	clicks_to_ignore += 1
 	is_drawing = false
 
-# Menu bar
+#endregion
+
+#region Menu bar
+
+#region New button
 
 func _on_new_pressed() -> void:
 	var popup = load(NEW_FILE_POPUP_PATH).instance()
-	plugin.inject_tool(popup)
 	
+	# warning-ignore:return_value_discarded
 	popup.connect("confirmed", self, "_on_new_file_confirmed")
 	
-	plugin.get_editor_interface().get_editor_viewport().add_child(popup)
+	_add_popup(popup)
 
 func _on_new_file_confirmed(canvas_size: Vector2) -> void:
 	var img := Image.new()
@@ -185,17 +198,54 @@ func _on_new_file_confirmed(canvas_size: Vector2) -> void:
 	
 	_on_image_loaded([canvas_size, Color.white])
 
+#endregion
+
+#region Save button
+
 func _on_save_pressed() -> void:
-	save_item()
+	handle_error(save_image())
+
+#endregion
+
+#region Save as button
 
 func _on_save_as_pressed() -> void:
-	logger.error("Not yet implemented")
+	var popup: WindowDialog = load(SAVE_AS_FILE_POPUP_PATH).instance()
+	
+	# warning-ignore:return_value_discarded
+	popup.connect("confirmed", self, "_on_save_as_confirmed")
+	
+	_add_popup(popup)
+
+func _on_save_as_confirmed(path: String) -> void:
+	save_util.current_file_path = path
+	handle_error(save_image())
+
+#endregion
+
+#region Load button
 
 func _on_load_pressed() -> void:
-	logger.error("Not yet implemented")
+	var popup: WindowDialog = load(LOAD_FILE_POPUP_PATH).instance()
+	
+	# warning-ignore:return_value_discarded
+	popup.connect("confirmed", self, "_on_load_confirmed")
+	
+	_add_popup(popup)
+
+func _on_load_confirmed(path: String) -> void:
+	handle_error(open_image(path))
+
+#endregion
+
+#region Revert button
 
 func _on_revert_pressed() -> void:
-	save_util.open_cached_image()
+	handle_error(save_util.open_cached_image())
+
+#endregion
+
+#endregion
 
 func _on_image_loaded(data: Array) -> void:
 	for layer in layers.get_children():
@@ -247,14 +297,6 @@ func _blit() -> void:
 	tex.create_from_image(current_layer.base_image, 0)
 	current_layer.base_sprite.texture = tex
 
-func _create_file_select() -> FileDialog:
-	var r := FileDialog.new()
-	
-	# TODO
-	logger.trace("stubbed")
-	
-	return r
-
 func _create_layer(data: Array = []) -> Node2D:
 	var layer: Node2D = load(LAYER_PATH).instance()
 	plugin.inject_tool(layer)
@@ -289,6 +331,27 @@ func _create_layer(data: Array = []) -> Node2D:
 	
 	return layer
 
+func _add_popup(popup: WindowDialog) -> void:
+	"""
+	Wrapper for injecting the necessary scripts and adding popups to the correct viewport
+	"""
+	plugin.inject_tool(popup)
+	popup.register_main(self)
+	plugin.get_editor_interface().get_editor_viewport().add_child(popup)
+
+func _determine_default_search_path() -> String:
+	var output: Array = []
+	match OS.get_name().to_lower():
+		"windows":
+			# warning-ignore:return_value_discarded
+			OS.execute("echo", ["%HOMEDRIVE%%HOMEPATH%"], true, output)
+		"osx", "x11":
+			# warning-ignore:return_value_discarded
+			OS.execute("echo", ["$HOME"], true, output)
+	if output.size() == 1:
+		return output[0].strip_edges()
+	return "/"
+
 ###############################################################################
 # Public functions                                                            #
 ###############################################################################
@@ -300,13 +363,16 @@ func image() -> Image:
 	"""
 	return current_layer.base_image
 
-func open_item(path: String) -> int:
-	return save_util.open_item(path)
+func open_image(path: String) -> int:
+	return save_util.open_image(path)
 
-func save_item() -> int:
+func save_image() -> int:
 	return save_util.save_image()
 
 func handle_error(error_code: int) -> void:
+	if error_code == OK:
+		return
+	
 	# Check if we already tried to handle an error already
 	var stack: Array = get_stack()
 	var handle_error_count: int = 0
@@ -317,12 +383,11 @@ func handle_error(error_code: int) -> void:
 		if i.get("function", "handle_error") == "handle_error":
 			handle_error_count += 1
 
-	logger.error("Trying to handle error: %d" % error_code)
+	logger.debug("Trying to handle error: %d" % error_code)
 
 	match error_code:
 		ErrorCode.SAVE_FILE_DOES_NOT_EXIST:
-			
-			pass
+			_on_save_as_pressed()
 		ErrorCode.UNABLE_TO_OPEN_IMAGE:
 			pass
 		ErrorCode.UNABLE_TO_SAVE_IMAGE:

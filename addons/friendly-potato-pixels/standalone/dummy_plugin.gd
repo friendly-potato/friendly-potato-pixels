@@ -12,7 +12,7 @@ func _input(event: InputEvent) -> void:
 	# We can't, so we have to poll for the expected input
 	if event is InputEventKey:
 		if (event.control == true and event.scancode == KEY_S and event.pressed):
-			if main.save_item() != OK:
+			if main.save_image() != OK:
 				logger.error("Unable to save image")
 
 class Dummy extends Object:

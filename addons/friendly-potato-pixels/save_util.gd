@@ -72,7 +72,7 @@ func save_input_event(event: InputEvent) -> int:
 	
 	return OK
 
-func open_item(text: String) -> int:
+func open_image(text: String) -> int:
 	"""
 	Opens an image for drawing. Stores the original in the cache if it's not already cached.
 	
@@ -131,7 +131,7 @@ func save_image(current: bool = true) -> int:
 	
 	main.image().unlock()
 	
-	if main.image.save_png(path) != OK:
+	if main.image().save_png(path) != OK:
 		logger.error("Unable to save png at path %s" % path)
 		main.image().lock() # Relock the image anyways
 		return main.ErrorCode.UNABLE_TO_SAVE_IMAGE

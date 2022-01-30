@@ -61,8 +61,7 @@ func _exit_tree():
 		file_system.disconnect("multi_selected", self, "_on_file_system_multi_selected")
 
 func save_external_data():
-	if main.save_item() != OK:
-		logger.error("Unable to save image")
+	main.handle_error(main.save_image())
 
 func enable_plugin():
 	get_editor_interface().set_main_screen_editor(PLUGIN_NAME)
@@ -76,7 +75,7 @@ func _on_file_system_multi_selected(item: TreeItem, column: int, selected: bool)
 	if not selected:
 		return
 	
-	main.open_item("%s/%s" % [
+	main.open_image("%s/%s" % [
 		ProjectSettings.globalize_path(get_editor_interface().get_selected_path()),
 		item.get_text(column)])
 

@@ -1,0 +1,45 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://addons/friendly-potato-pixels/popups/base_dialog.tscn" type="PackedScene" id=1]
+[ext_resource path="res://addons/friendly-potato-pixels/popups/save_as_file_dialog.gd" type="Script" id=2]
+
+[node name="SaveAsFileDialog" instance=ExtResource( 1 )]
+script = ExtResource( 2 )
+
+[node name="ScrollContainer" parent="VBoxContainer" index="0"]
+margin_right = 1580.0
+margin_bottom = 441.0
+
+[node name="VBoxContainer" parent="VBoxContainer/ScrollContainer" index="0"]
+margin_right = 1580.0
+margin_bottom = 441.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/VBoxContainer" index="0"]
+margin_top = 208.0
+margin_right = 1580.0
+margin_bottom = 232.0
+size_flags_vertical = 6
+
+[node name="Label" type="Label" parent="VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer" index="0"]
+margin_top = 5.0
+margin_right = 788.0
+margin_bottom = 19.0
+size_flags_horizontal = 3
+text = "File path:"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer" index="1"]
+margin_left = 792.0
+margin_right = 1580.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+
+[node name="LineEdit" type="LineEdit" parent="VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/HBoxContainer" index="0"]
+margin_right = 725.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+
+[node name="Browse" type="Button" parent="VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/HBoxContainer" index="1"]
+margin_left = 729.0
+margin_right = 788.0
+margin_bottom = 24.0
+text = "Browse"
