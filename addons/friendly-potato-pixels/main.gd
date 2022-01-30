@@ -143,7 +143,8 @@ func _gui_input(event: InputEvent) -> void:
 
 func _exit_tree() -> void:
 	if not Engine.editor_hint:
-		plugin.queue_free()
+		plugin.cleanup()
+		plugin.free()
 	
 	logger.info("Friendly Potato Pixels going away")
 
