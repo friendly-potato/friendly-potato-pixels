@@ -1,49 +1,30 @@
-extends Node2D
+extends "res://addons/friendly-potato-pixels/popups/base_dialog.gd"
 
-var logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
-
-# Main display and draw layer
-onready var base_sprite: Sprite = $BaseSprite
-var base_image: Image
-
-# Used moving and placing the image
-onready var transform_sprite: Sprite = $TransformSprite
-var transform_image: Image
-
-var input_image: Image
-var input_canvas_size: Vector2 # Never actually null
-var input_color: Color # Never actually null
+onready var canvas_x: LineEdit = $VBoxContainer/CanvasSize/VBoxContainer/CanvasX/LineEdit
+onready var canvas_y: LineEdit = $VBoxContainer/CanvasSize/VBoxContainer/CanvasY/LineEdit
 
 ###############################################################################
 # Builtin functions                                                           #
 ###############################################################################
 
 func _ready() -> void:
-	logger.setup(self)
-	
-	if input_image != null:
-		base_image = input_image
-	else:
-		base_image = Image.new()
-		base_image.create(input_canvas_size.x, input_canvas_size.y, false, Image.FORMAT_RGBA8)
-		base_image.fill(input_color)
-	
-	base_sprite.texture = _create_texture(base_image)
-	base_image.lock()
+	canvas_x.connect("text_changed", self, "_on_canvas_size_changed")
+	canvas_y.connect("text_changed", self, "_on_canvas_size_changed")
 
 ###############################################################################
 # Connections                                                                 #
 ###############################################################################
 
+func _on_canvas_size_changed(text: String) -> void:
+	accept_button.disabled = not text.is_valid_float()
+
+func _on_accept_pressed() -> void:
+	emit_signal("confirmed", Vector2(float(canvas_x.text), float(canvas_y.text)))
+	queue_free()
+
 ###############################################################################
 # Private functions                                                           #
 ###############################################################################
-
-static func _create_texture(img: Image) -> ImageTexture:
-	var tex := ImageTexture.new()
-	tex.create_from_image(img, 0)
-	
-	return tex
 
 ###############################################################################
 # Public functions                                                            #

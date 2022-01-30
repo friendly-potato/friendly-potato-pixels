@@ -1,8 +1,13 @@
 extends Object
 
+var logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
+
 ###############################################################################
 # Builtin functions                                                           #
 ###############################################################################
+
+func _init() -> void:
+	logger.setup(self)
 
 ###############################################################################
 # Connections                                                                 #
@@ -18,21 +23,6 @@ extends Object
 
 func create_dummy_plugin() -> Node:
 	return load("res://addons/friendly-potato-pixels/standalone/dummy_plugin.gd").new()
-
-func setup_toolbar_control() -> MarginContainer:
-	var control := MarginContainer.new()
-	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
-	control.anchor_left = 0.75
-	control.anchor_right = 1.0
-	control.anchor_top = 0.0
-	control.anchor_bottom = 1.0
-	control.margin_top = 7
-	control.margin_bottom = -7
-	control.margin_left = 7
-	control.margin_right = -7
-	
-	return control
 
 func create_toolbar() -> Control:
 	var r: Control = load("res://addons/friendly-potato-pixels/toolbar.tscn").instance()

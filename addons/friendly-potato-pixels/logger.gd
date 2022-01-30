@@ -4,6 +4,8 @@ signal on_log(message)
 
 enum LogType { NONE, INFO, DEBUG, TRACE, ERROR }
 
+var parent_name: String = "DEFAULT_LOGGER"
+
 ###############################################################################
 # Builtin functions                                                           #
 ###############################################################################
@@ -18,7 +20,8 @@ enum LogType { NONE, INFO, DEBUG, TRACE, ERROR }
 
 func _log(message: String, log_type: int) -> void:
 	var datetime: Dictionary = OS.get_datetime()
-	message = "%s-%s-%s_%s:%s:%s %s" % [
+	message = "%s %s-%s-%s_%s:%s:%s %s" % [
+		parent_name,
 		datetime["year"],
 		datetime["month"],
 		datetime["day"],
@@ -50,6 +53,20 @@ func _log(message: String, log_type: int) -> void:
 ###############################################################################
 # Public functions                                                            #
 ###############################################################################
+
+func setup(n) -> void:
+	"""
+	Initialize the logger with the containing object name. Prefer user-defined values but
+	also try to intelligently get the calling object name as well
+	"""
+	if typeof(n) == TYPE_STRING:
+		parent_name = n
+	elif n.get_script():
+		parent_name = n.get_script().resource_path.get_file()
+	elif n.get("name"):
+		parent_name = n.name
+	else:
+		trace("Unable to setup logger using var: %s" % str(n))
 
 func info(message: String) -> void:
 	_log(message, LogType.INFO)

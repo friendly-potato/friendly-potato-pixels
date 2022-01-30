@@ -1,9 +1,8 @@
 extends WindowDialog
 
-signal confirmed(canvas_size)
+signal confirmed(data)
 
-onready var canvas_x: LineEdit = $VBoxContainer/CanvasSize/VBoxContainer/CanvasX/LineEdit
-onready var canvas_y: LineEdit = $VBoxContainer/CanvasSize/VBoxContainer/CanvasY/LineEdit
+var logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
 
 onready var accept_button: Button = $VBoxContainer/ConfirmButtons/Accept
 onready var cancel_button: Button = $VBoxContainer/ConfirmButtons/Cancel
@@ -13,8 +12,7 @@ onready var cancel_button: Button = $VBoxContainer/ConfirmButtons/Cancel
 ###############################################################################
 
 func _ready() -> void:
-	canvas_x.connect("text_changed", self, "_on_canvas_size_changed")
-	canvas_y.connect("text_changed", self, "_on_canvas_size_changed")
+	logger.setup(self)
 	
 	accept_button.connect("pressed", self, "_on_accept_pressed")
 	
@@ -28,11 +26,8 @@ func _ready() -> void:
 # Connections                                                                 #
 ###############################################################################
 
-func _on_canvas_size_changed(text: String) -> void:
-	accept_button.disabled = not text.is_valid_float()
-
 func _on_accept_pressed() -> void:
-	emit_signal("confirmed", Vector2(float(canvas_x.text), float(canvas_y.text)))
+	emit_signal("confirmed", null)
 	queue_free()
 
 func _on_hide() -> void:

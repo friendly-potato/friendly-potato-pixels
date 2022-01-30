@@ -1,5 +1,7 @@
 extends Control
 
+var logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
+
 var plugin: Node
 
 onready var tree: Tree = $HSplitContainer/Tree
@@ -19,6 +21,8 @@ var is_registered := false
 ###############################################################################
 
 func _ready() -> void:
+	logger.setup(self)
+	
 	tree.connect("item_selected", self, "_on_item_selected")
 	
 	var root := tree.create_item()
@@ -45,6 +49,7 @@ func _on_message_sent(text: String) -> void:
 
 func register_main(n: Node) -> void:
 	if not is_registered:
+		# TODO should we connect to all loggers?
 		n.logger.connect("on_log", self, "_on_message_sent")
 		
 		new_button.connect("pressed", n, "_on_new_pressed")

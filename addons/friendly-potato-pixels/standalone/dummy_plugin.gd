@@ -2,13 +2,18 @@ extends Node
 
 var main: Node
 
+var logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
+
+func _init() -> void:
+	logger.setup(self)
+
 func _input(event: InputEvent) -> void:
 	# Plugins can hook into the editor's built-in save functionality
 	# We can't, so we have to poll for the expected input
 	if event is InputEventKey:
 		if (event.control == true and event.scancode == KEY_S and event.pressed):
 			if main.save_item() != OK:
-				main.logger.error("Unable to save image")
+				logger.error("Unable to save image")
 
 class Dummy extends Object:
 	var main: Node

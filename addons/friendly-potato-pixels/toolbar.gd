@@ -2,6 +2,8 @@ extends Control
 
 signal brush_size_changed(value)
 
+var logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
+
 const MIN_BRUSH_SIZE: int = 1
 var max_brush_size: int = 1
 
@@ -24,6 +26,8 @@ var is_registered := false
 ###############################################################################
 
 func _ready() -> void:
+	logger.setup(self)
+	
 	size_h_slider.min_value = MIN_BRUSH_SIZE
 	size_line_edit.connect("text_changed", self, "_on_size_line_edit_text_changed")
 	size_h_slider.connect("value_changed", self, "_on_size_h_slider_value_changed")

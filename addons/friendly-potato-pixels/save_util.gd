@@ -10,6 +10,8 @@ const VALID_EXTENSIONS := [
 	"tga"
 ]
 
+var logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
+
 var main: Node
 
 const CACHE_FOLDER_NAME := "FriendlyPotatoPixels"
@@ -25,6 +27,8 @@ var is_registered := false
 ###############################################################################
 
 func _init() -> void:
+	logger.setup(self)
+	
 	if clear_cache() != OK:
 		printerr("Unable to clear cache on startup")
 
@@ -94,13 +98,13 @@ func open_item(text: String) -> int:
 			r = image.save_png("%s/%s" % [cache_path, file_name])
 			# Prevent user from destructively editing an image without a backup
 			if r != OK:
-				main.logger.error("Unable to save png to cache %s" % cache_path)
+				logger.error("Unable to save png to cache %s" % cache_path)
 				return r
 		
 		last_file_path = current_file_path
 		current_file_path = text
 		
-		emit_signal("image_loaded", image)
+		emit_signal("image_loaded", [image])
 	
 	return r
 
@@ -109,7 +113,7 @@ func open_cached_image() -> int:
 	
 	var path := "%s/%s" % [cache_path, current_file_path.get_file()]
 	if image.load(path) != OK:
-		main.logger.error("Unable to open cached image for reading at path %s" % path)
+		logger.error("Unable to open cached image for reading at path %s" % path)
 		return main.ErrorCode.UNABLE_TO_OPEN_CACHED_IMAGE
 	
 	emit_signal("image_loaded", image)
@@ -123,18 +127,18 @@ func save_image(current: bool = true) -> int:
 	
 	var file_name := path.get_file()
 	
-	main.logger.info("Saving file at path %s" % path)
+	logger.info("Saving file at path %s" % path)
 	
 	main.image().unlock()
 	
 	if main.image.save_png(path) != OK:
-		main.logger.error("Unable to save png at path %s" % path)
+		logger.error("Unable to save png at path %s" % path)
 		main.image().lock() # Relock the image anyways
 		return main.ErrorCode.UNABLE_TO_SAVE_IMAGE
 	
 	main.image().lock()
 	
-	main.logger.info("Successfully saved file at path %s" % path)
+	logger.info("Successfully saved file at path %s" % path)
 	
 	return OK
 

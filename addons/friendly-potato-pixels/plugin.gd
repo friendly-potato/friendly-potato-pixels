@@ -4,6 +4,8 @@ extends EditorPlugin
 const PLUGIN_NAME := "Pixels"
 const TOOLBAR_NAME := "Toolbar"
 
+var logger
+
 var main: Control
 var toolbar: Control
 var menu_bar: Control
@@ -12,6 +14,9 @@ var file_system: Tree
 var toolbar_parent: TabContainer
 
 func _enter_tree():
+	logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
+	logger.setup(self)
+	
 	menu_bar = load("res://addons/friendly-potato-pixels/menu_bar.tscn").instance()
 	inject_tool(menu_bar)
 	menu_bar.plugin = self
@@ -57,7 +62,7 @@ func _exit_tree():
 
 func save_external_data():
 	if main.save_item() != OK:
-		main.logger.error("Unable to save image")
+		logger.error("Unable to save image")
 
 func enable_plugin():
 	get_editor_interface().set_main_screen_editor(PLUGIN_NAME)

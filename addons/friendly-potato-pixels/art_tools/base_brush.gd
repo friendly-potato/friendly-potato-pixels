@@ -2,11 +2,16 @@ extends Reference
 
 const BLIT: GDScript = preload("res://addons/friendly-potato-pixels/art_tools/blit.gd")
 
+var logger = load("res://addons/friendly-potato-pixels/logger.gd").new()
+
 var size: int = 1
 
 ###############################################################################
 # Builtin functions                                                           #
 ###############################################################################
+
+func _init() -> void:
+	logger.setup(self)
 
 ###############################################################################
 # Connections                                                                 #

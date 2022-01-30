@@ -16,7 +16,7 @@ enum ErrorCode {
 }
 
 const SETUP_UTIL_PATH: String = "res://addons/friendly-potato-pixels/standalone/setup_util.gd"
-const NEW_FILE_POPUP_PATH: String = "res://addons/friendly-potato-pixels/new_file_dialog.tscn"
+const NEW_FILE_POPUP_PATH: String = "res://addons/friendly-potato-pixels/popups/new_file_dialog.tscn"
 const LAYER_PATH: String = "res://addons/friendly-potato-pixels/layer.tscn"
 
 const INITIAL_CANVAS_SCALE: float = 10.0
@@ -88,6 +88,8 @@ func _ready() -> void:
 		add_child(menu_bar)
 		
 		setup_util.free()
+	
+	logger.setup(self)
 	
 	get_tree().connect("screen_resized", self, "_on_screen_resized")
 	_on_screen_resized()
@@ -181,7 +183,7 @@ func _on_new_file_confirmed(canvas_size: Vector2) -> void:
 	img.create(canvas_size.x, canvas_size.y, false, Image.FORMAT_RGBA8)
 	img.fill(Color.white)
 	
-	_on_image_loaded(img)
+	_on_image_loaded([canvas_size, Color.white])
 
 func _on_save_pressed() -> void:
 	save_item()
@@ -195,11 +197,11 @@ func _on_load_pressed() -> void:
 func _on_revert_pressed() -> void:
 	save_util.open_cached_image()
 
-func _on_image_loaded(i: Image) -> void:
+func _on_image_loaded(data: Array) -> void:
 	for layer in layers.get_children():
 		layer.queue_free()
 	
-	current_layer = _create_layer([i.get_data()])
+	current_layer = _create_layer(data)
 	layers.add_child(current_layer)
 	
 	_setup()
@@ -260,8 +262,6 @@ func _create_layer(data: Array = []) -> Node2D:
 	var initial_color := DEFAULT_LAYER_COLOR
 	var initial_canvas_size := DEFAULT_LAYER_CANVAS_SIZE
 	var initial_image: Image
-	# Intentionally left blank because Godot allocates an empty PoolByteArray by default
-	var initial_image_data # PoolByteArray
 	
 	if not data.empty():
 		for d in data:
@@ -270,18 +270,18 @@ func _create_layer(data: Array = []) -> Node2D:
 					initial_color = d
 				TYPE_VECTOR2:
 					initial_canvas_size = d
-				TYPE_RAW_ARRAY:
-					initial_image_data = d
+				TYPE_OBJECT:
+					if d is Image:
+						initial_image = d
+					else:
+						logger.error("Expected Image for layer but got: %s" % str(d))
 				_:
 					logger.error("Unrecognized param for layer: %s" % str(d))
 		
 	# We have image data so create an input image for the layer
 	# Don't check for initial canvas size since that should always be provided
 	# If it's not, then I'm not sure what's going to happen
-	if initial_image_data != null:
-		initial_image = Image.new()
-		initial_image.create_from_data(initial_canvas_size.x, initial_canvas_size.y,
-				false, Image.FORMAT_RGBA8, initial_image_data)
+	if initial_image != null:
 		layer.input_image = initial_image
 	else:
 		layer.input_canvas_size = initial_canvas_size
@@ -305,3 +305,37 @@ func open_item(path: String) -> int:
 
 func save_item() -> int:
 	return save_util.save_image()
+
+func handle_error(error_code: int) -> void:
+	# Check if we already tried to handle an error already
+	var stack: Array = get_stack()
+	var handle_error_count: int = 0
+	for i in stack:
+		if handle_error_count > 1:
+			logger.trace("Handling of error resulted in another error: %d" % error_code)
+			return
+		if i.get("function", "handle_error") == "handle_error":
+			handle_error_count += 1
+
+	logger.error("Trying to handle error: %d" % error_code)
+
+	match error_code:
+		ErrorCode.SAVE_FILE_DOES_NOT_EXIST:
+			
+			pass
+		ErrorCode.UNABLE_TO_OPEN_IMAGE:
+			pass
+		ErrorCode.UNABLE_TO_SAVE_IMAGE:
+			pass
+		ErrorCode.UNABLE_TO_CREATE_CACHE_DIRECTORY:
+			pass
+		ErrorCode.UNABLE_TO_OPEN_CACHED_IMAGE:
+			pass
+		ErrorCode.UNABLE_TO_SAVE_TO_CACHE:
+			pass
+		ErrorCode.UNABLE_TO_ITERATE_OVER_CACHE:
+			pass
+		ErrorCode.UNABLE_TO_REMOVE_CACHE_ITEM:
+			pass
+		_: # Built-in error
+			logger.error(error_code)
