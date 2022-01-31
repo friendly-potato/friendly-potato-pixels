@@ -34,6 +34,9 @@ const LOAD_FILE_POPUP_PATH := "res://addons/friendly-potato-pixels/popups/load_f
 
 const LAYER_PATH := "res://addons/friendly-potato-pixels/layer.tscn"
 
+# TODO move to brush logic?
+const BLIT: GDScript = preload("res://addons/friendly-potato-pixels/art_tools/blit.gd")
+
 const LAST_ACTION_DATA := "res://addons/friendly-potato-pixels/last_action_data.gd"
 
 #endregion
@@ -75,7 +78,7 @@ var clicks_to_ignore: int = 0
 
 #region Art data
 
-var last_pixel_pos := Vector2(-1, -1)
+var last_pixel_pos := -Vector2.ONE
 var primary_color
 var secondary_color := Color.white
 
@@ -191,17 +194,21 @@ func _on_screen_resized() -> void:
 #region Toolbar
 
 func _on_pencil_pressed() -> void:
+	_refresh_idempotency()
 	# TODO stub
 	pass
 
 func _on_smart_brush_pressed() -> void:
+	_refresh_idempotency()
 	# TODO stub
 	pass
 
 func _on_brush_size_changed(value: int) -> void:
+	_refresh_idempotency()
 	brush.size = value
 
 func _on_color_changed(color: Color) -> void:
+	_refresh_idempotency()
 	primary_color = color
 
 func _on_color_dropper_pressed() -> void:
@@ -300,12 +307,19 @@ func _setup() -> void:
 	menu_bar.register_main(self)
 	save_util.register_main(self)
 
+func _refresh_idempotency() -> void:
+	"""
+	Generaly used when we want to draw on the same pixel again
+	"""
+	last_pixel_pos = -Vector2.ONE
+
 #region Blit
 
 func _blit(drawing_active: bool = true) -> void:
 	if not drawing_active:
 		_add_to_undo_redo()
 		current_layer.predraw_commit()
+		_refresh_idempotency()
 		return
 	var pos: Vector2 = cells.world_to_map(
 		cells.to_local(
@@ -314,12 +328,16 @@ func _blit(drawing_active: bool = true) -> void:
 					viewport.canvas_transform.get_scale()))
 	if pos == last_pixel_pos:
 		return
-	last_pixel_pos = pos
 	
 	var blit: Reference = brush.paint(pos, current_layer.base_image)
+
+	# TODO this should probably be stored in the brush
+	# Fix broken lines
+	var inbetweens: Array = _dda(last_pixel_pos, pos) if last_pixel_pos != -Vector2.ONE else []
 	
 	# TODO add intermediate blit operations
-
+	
+	# TODO splitting these up as a quickfix, needs more investigation to work in 1 loop
 	for vec in blit.position_data:
 		var old_color: Color = current_layer.base_image.get_pixelv(vec)
 		var new_color := old_color.blend(primary_color)
@@ -327,12 +345,81 @@ func _blit(drawing_active: bool = true) -> void:
 		blit.new_color_data.append(old_color.blend(primary_color))
 		blit.old_color_data.append(old_color)
 
-		# current_layer.predraw_image.lock()
 		current_layer.predraw_image.set_pixelv(vec, new_color)
-
+	
+	var inbetween_positions := []
+	var inbetween_new_colors := []
+	var inbetween_old_colors := []
+	
+#	for in_vec in inbetweens:
+#		for vec in blit.position_data:
+##			var old_color: Color = current_layer.base_image.get_pixelv(vec)
+##			var new_color := old_color.blend(primary_color)
+##
+##			blit.new_color_data.append(old_color.blend(primary_color))
+##			blit.old_color_data.append(old_color)
+##
+##			current_layer.predraw_image.set_pixelv(vec, new_color)
+#
+#			var new_pos: Vector2 = vec + (last_pixel_pos - in_vec)
+#
+#			if not _is_valid_pos(new_pos.x, new_pos.y, current_layer.predraw_image.get_width(), current_layer.predraw_image.get_height()):
+#				continue
+#
+#			var blit_old_color: Color = current_layer.base_image.get_pixelv(new_pos)
+#			var blit_new_color := blit_old_color.blend(primary_color)
+#
+#			inbetween_positions.append(new_pos)
+#			inbetween_new_colors.append(blit_old_color.blend(primary_color))
+#			inbetween_old_colors.append(blit_new_color)
+#
+#			current_layer.predraw_image.set_pixelv(new_pos, blit_new_color)
+#
+#	blit.position_data.append_array(inbetween_positions)
+#	blit.new_color_data.append_array(inbetween_new_colors)
+#	blit.old_color_data.append_array(inbetween_old_colors)
+	
 	last_action_data.add_blit(blit)
 
+	last_pixel_pos = pos
+
 	current_layer.predraw_refresh()
+
+# https://www.geeksforgeeks.org/dda-line-generation-algorithm-computer-graphics/
+func _dda(from: Vector2, to: Vector2) -> Array:
+	var r := []
+	
+	var dx: float = to.x - from.x
+	var dy: float = to.y - from.y
+	
+	var abs_dx: float = abs(dx)
+	var abs_dy: float = abs(dy)
+	
+	var steps: float = abs_dx if abs_dx > abs_dy else abs_dy
+	
+	var x_inc: float = round(dx / steps)
+	var y_inc: float = round(dy / steps)
+	
+	var x: float = from.x
+	var y: float = from.y
+	
+	for i in int(steps):
+		r.append(Vector2(x, y))
+		x += x_inc
+		y += y_inc
+	
+	return r
+
+# https://actionsnippet.com/?p=1031
+func _catmull_rom_spline() -> void:
+	# TODO not implemented, maybe move to brush
+	pass
+
+# TODO duplicated from base_brush
+static func _is_valid_pos(x: int, y: int, w: int, h: int) -> bool:
+	if (x < 0 or x > w or y < 0 or y > h):
+		return false
+	return true
 
 #endregion
 
@@ -408,7 +495,7 @@ func _add_to_undo_redo() -> void:
 		ActionType.TRANSFORM:
 			logger.trace("Not yet implemented")
 		_:
-			logger.error("ActionType not implemented")
+			logger.debug("Empty action encountered")
 
 #endregion
 

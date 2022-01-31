@@ -1,5 +1,7 @@
 extends Reference
 
+const BLIT: GDScript = preload("res://addons/friendly-potato-pixels/art_tools/blit.gd")
+
 enum ActionType {
 	NONE = 0,
 	BLIT,
@@ -54,7 +56,13 @@ func add_blit(blit: Reference) -> void:
 	
 	blit_data.append(blit)
 
-func _add_transform_data(
+func has_blit_data() -> bool:
+	return not blit_data.empty()
+
+func last_blit() -> Reference:
+	return blit_data.back()
+
+func add_transform_data(
 		p_canvas_size: Vector2,
 		initial_data: PoolByteArray,
 		new_data: PoolByteArray) -> void:

@@ -116,7 +116,7 @@ func open_cached_image() -> int:
 		logger.error("Unable to open cached image for reading at path %s" % path)
 		return main.ErrorCode.UNABLE_TO_OPEN_CACHED_IMAGE
 	
-	emit_signal("image_loaded", image)
+	emit_signal("image_loaded", [image])
 	
 	return OK
 
