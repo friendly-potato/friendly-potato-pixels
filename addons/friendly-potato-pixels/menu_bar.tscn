@@ -24,6 +24,7 @@ __meta__ = {
 }
 
 [node name="Tree" type="Tree" parent="HSplitContainer"]
+visible = false
 margin_right = 100.0
 margin_bottom = 872.0
 rect_min_size = Vector2( 100, 0 )
@@ -31,35 +32,34 @@ allow_reselect = true
 hide_root = true
 
 [node name="Menu" type="VBoxContainer" parent="HSplitContainer"]
-margin_left = 112.0
 margin_right = 1572.0
 margin_bottom = 872.0
 
 [node name="Messaging" type="Label" parent="HSplitContainer/Menu"]
-margin_right = 1460.0
+margin_right = 1572.0
 margin_bottom = 14.0
 
 [node name="New" type="Button" parent="HSplitContainer/Menu"]
 margin_top = 18.0
-margin_right = 1460.0
+margin_right = 1572.0
 margin_bottom = 38.0
 text = "New"
 
 [node name="SaveButtons" type="HBoxContainer" parent="HSplitContainer/Menu"]
 margin_top = 42.0
-margin_right = 1460.0
+margin_right = 1572.0
 margin_bottom = 62.0
 
 [node name="Save" type="Button" parent="HSplitContainer/Menu/SaveButtons"]
-margin_right = 728.0
+margin_right = 784.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 text = "Save"
 
 [node name="SaveAs" type="Button" parent="HSplitContainer/Menu/SaveButtons"]
-margin_left = 732.0
-margin_right = 1460.0
+margin_left = 788.0
+margin_right = 1572.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -67,12 +67,12 @@ text = "Save As"
 
 [node name="Load" type="Button" parent="HSplitContainer/Menu"]
 margin_top = 66.0
-margin_right = 1460.0
+margin_right = 1572.0
 margin_bottom = 86.0
 text = "Load"
 
 [node name="Revert" type="Button" parent="HSplitContainer/Menu"]
 margin_top = 90.0
-margin_right = 1460.0
+margin_right = 1572.0
 margin_bottom = 110.0
 text = "Revert"
