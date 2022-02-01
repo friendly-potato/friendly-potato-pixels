@@ -71,12 +71,12 @@ func register_main(n: Node) -> void:
 		color_picker.connect("color_changed", n, "_on_color_changed")
 		color_picker.get_child(1).get_child(1).connect("pressed", n, "_on_color_dropper_pressed")
 		
+#		max_brush_size = max(n.image.get_width(), n.image.get_height())
+		max_brush_size = max(n.current_layer.base_image.get_width(), n.current_layer.base_image.get_height())
+		size_h_slider.max_value = max_brush_size
+		_on_size_h_slider_value_changed(1.0)
+
+		color_picker.color = DEFAULT_COLOR
+		color_picker.emit_signal("color_changed", DEFAULT_COLOR)
+		
 		is_registered = true
-	
-#	max_brush_size = max(n.image.get_width(), n.image.get_height())
-	max_brush_size = max(n.current_layer.base_image.get_width(), n.current_layer.base_image.get_height())
-	size_h_slider.max_value = max_brush_size
-	_on_size_h_slider_value_changed(1.0)
-	
-	color_picker.color = DEFAULT_COLOR
-	color_picker.emit_signal("color_changed", DEFAULT_COLOR)
